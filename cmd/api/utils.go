@@ -53,3 +53,14 @@ func (app *Application) writeError(w http.ResponseWriter, r *http.Request, code 
 		w.WriteHeader(500)
 	}
 }
+
+func (app *Application) readRequest(r *http.Request, input any) error {
+	reqBody := r.Body
+
+	err := json.NewDecoder(reqBody).Decode(&input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

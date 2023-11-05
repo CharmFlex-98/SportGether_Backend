@@ -12,6 +12,8 @@ func (app *Application) routes() http.Handler {
 	httpRouter.NotFound = http.HandlerFunc(app.notFound)
 	httpRouter.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowed)
 
+	userHandlerFunc(app, httpRouter)
+
 	return httpRouter
 }
 
@@ -25,5 +27,9 @@ func (app *Application) methodNotAllowed(w http.ResponseWriter, r *http.Request)
 func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("The URL '%s' is not found", r.URL.Path)
 	app.writeError(w, r, http.StatusNotFound, http.StatusNotFound, message)
+}
 
+func userHandlerFunc(app *Application, httpRouter *httprouter.Router) {
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/register", app.registerUser)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/login", app.loginUser)
 }
