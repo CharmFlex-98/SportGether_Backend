@@ -19,6 +19,8 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	query := `INSERT INTO ()`
+
 	user := models.User{
 		ID:        1,
 		UserName:  input.Username,
