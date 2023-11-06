@@ -3,8 +3,10 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"log/slog"
 	"os"
+	"sportgether/models"
 	"time"
 )
 
@@ -20,9 +22,9 @@ type config struct {
 }
 
 type Application struct {
-	config   config
-	logger   *slog.Logger
-	database *sql.DB
+	config config
+	logger *slog.Logger
+	daos   models.Daos
 }
 
 func main() {
@@ -41,16 +43,16 @@ func main() {
 	}
 
 	app := Application{
-		config:   config,
-		logger:   logger,
-		database: db,
+		config: config,
+		logger: logger,
+		daos:   models.NewDaos(db),
 	}
 
 	app.serve()
 }
 
 func (cfg config) openDatabase() (*sql.DB, error) {
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_UR:"))
+	db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,7 @@ func (app *Application) writeResponse(w http.ResponseWriter, content responseDat
 	return nil
 }
 
-func (app *Application) writeError(w http.ResponseWriter, r *http.Request, code int, errorCode int, message string) {
+func (app *Application) writeError(w http.ResponseWriter, r *http.Request, code int, errorCode int, message any) {
 	errContent := map[string]any{
 		"errorCode": errorCode,
 		"message":   message,
