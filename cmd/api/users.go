@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"sportgether/models"
 	"sportgether/tools"
-	"time"
 )
 
 func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
@@ -32,13 +31,13 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := models.User{
-		ID:        1,
-		UserName:  input.Username,
-		Email:     input.Email,
-		Password:  input.Password,
-		CreatedAt: time.Now(),
-		IsBlocked: false,
-		Version:   1,
+		UserName: input.Username,
+		Email:    input.Email,
+	}
+
+	err = user.Password.Set(input.Password)
+	if err != nil {
+		app.writeInternalServerErrorResponse(w, r)
 	}
 
 	err = app.daos.UserDao.Insert(&user)

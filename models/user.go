@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -10,11 +11,16 @@ type UserDao struct {
 	db *sql.DB
 }
 
+type password struct {
+	plainTextPassword string `json:"plainTextPassword"`
+	passwordHashed    []byte `json:"passwordHashed"`
+}
+
 type User struct {
 	ID        int64     `json:"id"`
-	UserName  string    `json:"usernam"`
+	UserName  string    `json:"username"`
 	Email     string    `json:"email"`
-	Password  string    `json:"password"`
+	Password  password  `json:"password"`
 	CreatedAt time.Time `json:"-"`
 	IsBlocked bool      `json:"is_blocked"`
 	Version   int32     `json:"-"`
@@ -30,7 +36,7 @@ func (dao UserDao) Insert(user *User) error {
 	args := []any{
 		user.UserName,
 		user.Email,
-		user.Password,
+		user.Password.passwordHashed,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -40,6 +46,18 @@ func (dao UserDao) Insert(user *User) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (password *password) Set(plainTextPassword string) error {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	password.plainTextPassword = plainTextPassword
+	password.passwordHashed = hashed
 
 	return nil
 }
