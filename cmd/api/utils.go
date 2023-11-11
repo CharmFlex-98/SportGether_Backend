@@ -11,7 +11,7 @@ func (app *Application) logInfo(message string, args ...any) {
 }
 
 func (app *Application) logError(error error, r *http.Request) {
-	app.logger.Error(error.Error(), "METHOD: %s", r.Method)
+	app.logger.Error(error.Error(), "METHOD", r.Method)
 }
 
 func (app *Application) logWarning(message string, args ...any) {

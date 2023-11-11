@@ -45,7 +45,7 @@ func main() {
 	app := Application{
 		config: config,
 		logger: logger,
-		daos:   models.NewDaos(db),
+		daos:   models.NewDaoHandler(db),
 	}
 
 	app.serve()

@@ -1,4 +1,4 @@
-package validator
+package tools
 
 import "regexp"
 
@@ -22,11 +22,11 @@ func (v *RequestValidator) Valid() bool {
 
 func (v *RequestValidator) Check(valid bool, errorType string, detail string) {
 	if !valid {
-		v.appendError(errorType, detail)
+		v.AppendError(errorType, detail)
 	}
 }
 
-func (v *RequestValidator) appendError(errorType string, detail string) {
+func (v *RequestValidator) AppendError(errorType string, detail string) {
 	if _, exist := v.Errors[errorType]; !exist {
 		v.Errors[errorType] = detail
 	}

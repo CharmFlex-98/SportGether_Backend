@@ -1,6 +1,8 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (app *Application) writeBadRequestResponse(w http.ResponseWriter, r *http.Request) {
 	message := "Malformed request. Please try again"

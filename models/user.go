@@ -3,7 +3,9 @@ package models
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"golang.org/x/crypto/bcrypt"
+	"sportgether/constants"
 	"time"
 )
 
@@ -60,4 +62,47 @@ func (password *password) Set(plainTextPassword string) error {
 	password.passwordHashed = hashed
 
 	return nil
+}
+
+func (password *password) Matches(plainTextPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword(password.passwordHashed, []byte(plainTextPassword))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return false, nil
+		default:
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func (dao UserDao) GetByUsername(username string) (*User, error) {
+	query := `SELECT * from sportgether_schema.users WHERE username = $1`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	user := &User{}
+
+	err := dao.db.QueryRowContext(ctx, query, username).Scan(
+		&user.ID,
+		&user.UserName,
+		&user.Email,
+		&user.Password.passwordHashed,
+		&user.CreatedAt,
+		&user.IsBlocked,
+		&user.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, constants.UsernameNotFoundError
+		default:
+			return nil, err
+		}
+	}
+
+	return user, nil
 }

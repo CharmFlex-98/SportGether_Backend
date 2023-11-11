@@ -6,7 +6,7 @@ type Daos struct {
 	UserDao
 }
 
-func NewDaos(database *sql.DB) Daos {
+func NewDaoHandler(database *sql.DB) Daos {
 	return Daos{
 		UserDao{
 			database,
