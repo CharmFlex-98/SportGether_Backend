@@ -12,8 +12,8 @@ type UserDao struct {
 }
 
 type password struct {
-	plainTextPassword string `json:"plainTextPassword"`
-	passwordHashed    []byte `json:"passwordHashed"`
+	plainTextPassword string
+	passwordHashed    []byte
 }
 
 type User struct {

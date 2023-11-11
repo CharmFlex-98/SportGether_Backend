@@ -23,6 +23,11 @@ type responseHeader map[string]string
 
 // Json response
 func (app *Application) writeResponse(w http.ResponseWriter, content responseData, code int, headers responseHeader) error {
+	if content == nil {
+		w.WriteHeader(code)
+		return nil
+	}
+
 	res, err := json.MarshalIndent(content, "", "\t")
 	if err != nil {
 		return err

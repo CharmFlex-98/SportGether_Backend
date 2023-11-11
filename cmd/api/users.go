@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sportgether/models"
 	"sportgether/tools"
+	"unicode/utf8"
 )
 
 func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
@@ -21,9 +22,9 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	reqValidator := validator.NewRequestValidator()
 
-	reqValidator.Check(input.Username != "", "username", "username must not leave blank")
-	reqValidator.Check(input.Email != "", "email", "email must not leave blank")
-	reqValidator.Check(input.Password != "", "email", "password must not leave blank")
+	validateUsername(reqValidator, input.Username)
+	validateEmail(reqValidator, input.Email)
+	validatePassword(reqValidator, input.Password)
 
 	if !reqValidator.Valid() {
 		app.writeError(w, r, http.StatusBadRequest, http.StatusBadRequest, reqValidator.Errors)
@@ -47,12 +48,27 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.writeResponse(w, responseData{"user": user}, http.StatusOK, nil)
+	err = app.writeResponse(w, nil, http.StatusAccepted, nil)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 	}
+}
 
+func validateEmail(requestValidator *validator.RequestValidator, email string) {
+	requestValidator.Check(email != "", "email", "email must not leave blank")
+	requestValidator.Check(requestValidator.Matches(validator.EmailRX, email), "email", "Malformed email format.")
+}
+
+func validateUsername(requestValidator *validator.RequestValidator, username string) {
+	requestValidator.Check(username != "", "username", "username must not leave blank")
+	requestValidator.Check(utf8.RuneCountInString(username) >= 3, "username_min_length", "username too short")
+	requestValidator.Check(utf8.RuneCountInString(username) <= 20, "username_max_length", "username too long")
+}
+
+func validatePassword(requestValidator *validator.RequestValidator, password string) {
+	requestValidator.Check(password != "", "email", "password must not leave blank")
+	requestValidator.Check(utf8.RuneCountInString(password) >= 6, "password_min_length", "password must contain at least 6 chars")
 }
 
 func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
