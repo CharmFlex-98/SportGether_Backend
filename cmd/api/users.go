@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"sportgether/models"
 	"sportgether/tools"
-	"unicode/utf8"
 )
 
+// Register User
 func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 	input := struct {
 		Username string `json:"username"`
@@ -22,9 +22,9 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	reqValidator := validator.NewRequestValidator()
 
-	validateUsername(reqValidator, input.Username)
-	validateEmail(reqValidator, input.Email)
-	validatePassword(reqValidator, input.Password)
+	validator.ValidateUsername(reqValidator, input.Username)
+	validator.ValidateEmail(reqValidator, input.Email)
+	validator.ValidatePassword(reqValidator, input.Password)
 
 	if !reqValidator.Valid() {
 		app.writeError(w, r, http.StatusBadRequest, http.StatusBadRequest, reqValidator.Errors)
@@ -55,22 +55,7 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func validateEmail(requestValidator *validator.RequestValidator, email string) {
-	requestValidator.Check(email != "", "email", "email must not leave blank")
-	requestValidator.Check(requestValidator.Matches(validator.EmailRX, email), "email", "Malformed email format.")
-}
-
-func validateUsername(requestValidator *validator.RequestValidator, username string) {
-	requestValidator.Check(username != "", "username", "username must not leave blank")
-	requestValidator.Check(utf8.RuneCountInString(username) >= 3, "username_min_length", "username too short")
-	requestValidator.Check(utf8.RuneCountInString(username) <= 20, "username_max_length", "username too long")
-}
-
-func validatePassword(requestValidator *validator.RequestValidator, password string) {
-	requestValidator.Check(password != "", "email", "password must not leave blank")
-	requestValidator.Check(utf8.RuneCountInString(password) >= 6, "password_min_length", "password must contain at least 6 chars")
-}
-
+// Login user
 func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
 
 }
