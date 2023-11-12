@@ -9,3 +9,11 @@ type TokenDao struct {
 	Scope  string
 	userId int64
 }
+
+func (tokenDao TokenDao) Insert() {
+	query :=
+}
+
+func (tokenDao TokenDao) GetUser(token string) {
+
+}
