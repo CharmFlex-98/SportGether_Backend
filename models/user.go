@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"sportgether/constants"
+	"strings"
 	"time"
 )
 
@@ -105,4 +107,29 @@ func (dao UserDao) GetByUsername(username string) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func (dao UserDao) InsertUserIsValid(username string, email string) (bool, error) {
+	query := `SELECT username from sportgether_schema.users WHERE username = $1 OR email = $2`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var placeHolder string
+
+	err := dao.db.QueryRowContext(ctx, query, username, email).Scan(&placeHolder)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return true, nil
+		default:
+			return false, err
+		}
+	}
+
+	return false, nil
+}
+
+// UniqueConstrainError Constant
+func UniqueConstrainError(err error, columnName string) bool {
+	return strings.Contains(err.Error(), fmt.Sprintf("duplicate key value violates unique constraint %q", "users_"+columnName+"_key"))
 }

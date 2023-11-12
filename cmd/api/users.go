@@ -45,8 +45,15 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	err = app.daos.UserDao.Insert(&user)
 	if err != nil {
-		app.logError(err, r)
-		app.writeInternalServerErrorResponse(w, r)
+		switch {
+		case models.UniqueConstrainError(err, "email"):
+			app.writeError(w, r, http.StatusUnprocessableEntity, constants.RegisteredEmailError.Code, constants.RegisteredEmailError.Error())
+		case models.UniqueConstrainError(err, "username"):
+			app.writeError(w, r, http.StatusUnprocessableEntity, constants.RegisteredUsernameError.Code, constants.RegisteredUsernameError.Error())
+		default:
+			app.logError(err, r)
+			app.writeInternalServerErrorResponse(w, r)
+		}
 		return
 	}
 
