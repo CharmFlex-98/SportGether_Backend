@@ -4,4 +4,4 @@
 
 add_schema 2023-11-05T16:30:39Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # add schema
 create_user_table [add_schema] 2023-11-05T16:46:02Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # create user table
-create_token_table [add_schema] 2023-11-12T07:34:33Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # create token table
+create_event_table 2023-11-27T16:25:40Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event table
