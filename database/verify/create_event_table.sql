@@ -3,6 +3,7 @@
 BEGIN;
 
 SELECT id,
+       host_id,
        event_name,
        start_time,
        end_time,

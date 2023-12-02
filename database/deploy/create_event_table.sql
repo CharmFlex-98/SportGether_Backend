@@ -5,6 +5,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS sportgether_schema.events
 (
     id                    bigserial PRIMARY KEY,
+    host_id bigint NOT NULL REFERENCES sportgether_schema.users on DELETE CASCADE,
     event_name            text NOT NULL,
     start_time            text NOT NULL,
     end_time              text NOT NULL,
