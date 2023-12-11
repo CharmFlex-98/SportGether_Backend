@@ -13,3 +13,8 @@ func (app *Application) writeInternalServerErrorResponse(w http.ResponseWriter, 
 	message := "Server encounters uan unknown error. Please try again later"
 	app.writeError(w, r, http.StatusInternalServerError, http.StatusInternalServerError, message)
 }
+
+func (app *Application) writeInvalidAuthenticationErrorResponse(w http.ResponseWriter, r *http.Request) {
+	message := "Missing token or invalid token"
+	app.writeError(w, r, http.StatusUnauthorized, http.StatusUnauthorized, message)
+}

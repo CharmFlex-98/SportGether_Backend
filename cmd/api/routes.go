@@ -13,8 +13,10 @@ func (app *Application) routes() http.Handler {
 	httpRouter.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowed)
 
 	userHandlerFunc(app, httpRouter)
+	eventHandlerFunc(app, httpRouter)
 
-	return httpRouter
+	return app.authenticationHandler(httpRouter)
+	//return httpRouter
 }
 
 // Custom method not allow handler
@@ -32,4 +34,9 @@ func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 func userHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/register", app.registerUser)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/login", app.loginUser)
+}
+
+func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/all", app.getAllEvents)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/create", app.createEvent)
 }

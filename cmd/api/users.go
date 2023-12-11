@@ -18,6 +18,7 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readRequest(r, &input)
 	if err != nil {
+		app.logError(err, r)
 		app.writeBadRequestResponse(w, r)
 		return
 	}
@@ -40,6 +41,7 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	err = user.Password.Set(input.Password)
 	if err != nil {
+		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 	}
 
@@ -73,6 +75,7 @@ func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readRequest(r, &input)
 	if err != nil {
+		app.logError(err, r)
 		app.writeBadRequestResponse(w, r)
 		return
 	}
@@ -95,6 +98,7 @@ func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
 		case errors.As(err, &errorCode):
 			app.writeError(w, r, http.StatusUnprocessableEntity, errorCode.Code, errorCode.Error())
 		default:
+			app.logError(err, r)
 			app.writeInternalServerErrorResponse(w, r)
 		}
 		return
@@ -113,7 +117,7 @@ func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// todo If everything ok, generate a token to user.
-	tokenString, err := tools.GenerateJwtToken(user)
+	tokenString, err := tools.GenerateJwtToken(user.ID, 720, tools.AUTHENTICATION_SCOPE)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
@@ -122,6 +126,7 @@ func (app *Application) loginUser(w http.ResponseWriter, r *http.Request) {
 
 	err = app.writeResponse(w, responseData{"token": tokenString}, http.StatusCreated, nil)
 	if err != nil {
+		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 	}
 }

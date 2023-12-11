@@ -20,6 +20,14 @@ type password struct {
 	passwordHashed    []byte
 }
 
+var (
+	UnauthenticatedUser = &User{}
+)
+
+func unauthenticatedUser(user *User) bool {
+	return user == UnauthenticatedUser
+}
+
 type User struct {
 	ID        int64     `json:"id"`
 	UserName  string    `json:"username"`
@@ -100,7 +108,7 @@ func (dao UserDao) GetByUsername(username string) (*User, error) {
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return nil, constants.UsernameNotFoundError
+			return nil, constants.UserNotFoundError
 		default:
 			return nil, err
 		}
@@ -109,24 +117,33 @@ func (dao UserDao) GetByUsername(username string) (*User, error) {
 	return user, nil
 }
 
-func (dao UserDao) InsertUserIsValid(username string, email string) (bool, error) {
-	query := `SELECT username from sportgether_schema.users WHERE username = $1 OR email = $2`
+func (dao UserDao) GetById(userId int64) (*User, error) {
+	query := `SELECT * from sportgether_schema.users WHERE id = $1`
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	var placeHolder string
+	user := &User{}
 
-	err := dao.db.QueryRowContext(ctx, query, username, email).Scan(&placeHolder)
+	err := dao.db.QueryRowContext(ctx, query, userId).Scan(
+		&user.ID,
+		&user.UserName,
+		&user.Email,
+		&user.Password.passwordHashed,
+		&user.CreatedAt,
+		&user.IsBlocked,
+		&user.Version,
+	)
+
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return true, nil
+			return nil, constants.UserNotFoundError
 		default:
-			return false, err
+			return nil, err
 		}
 	}
 
-	return false, nil
+	return user, nil
 }
 
 // UniqueConstrainError Constant

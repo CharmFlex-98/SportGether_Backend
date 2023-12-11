@@ -10,10 +10,6 @@ type TokenDao struct {
 	userId int64
 }
 
-func (tokenDao TokenDao) Insert() {
-	query :=
-}
-
 func (tokenDao TokenDao) GetUser(token string) {
 
 }
