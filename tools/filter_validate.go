@@ -1,8 +1,6 @@
 package tools
 
 import (
-	"encoding/base32"
-	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -42,13 +40,8 @@ func (filter Filter) DecodeCursor() (error, *Cursor) {
 	} else {
 		toDecode = filter.PrevCursor
 	}
-	data, err := base32.StdEncoding.DecodeString(toDecode)
-	if err != nil {
-		return err, nil
-	}
-
-	var cursor *Cursor
-	err = json.Unmarshal(data, &cursor)
+	cursor := Cursor{}
+	err := DecodeToBase32(&cursor, toDecode)
 	if err != nil {
 		return err, nil
 	}
@@ -57,7 +50,7 @@ func (filter Filter) DecodeCursor() (error, *Cursor) {
 		return errors.New(fmt.Sprintf("Unmatched cursor, IsNext expected to be %v but is %v", filter.HasNextCursor(), cursor.IsNext)), nil
 	}
 
-	return nil, cursor
+	return nil, &cursor
 }
 
 func (filter Filter) Validate(validator *RequestValidator) {

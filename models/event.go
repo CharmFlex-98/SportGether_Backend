@@ -15,7 +15,7 @@ type EventDao struct {
 }
 
 type Event struct {
-	ID                  string `json:"id"`
+	ID                  int64  `json:"id"`
 	EventName           string `json:"eventName"`
 	HostId              int64  `json:"-"`
 	StartTime           string `json:"startTime"`
@@ -40,6 +40,11 @@ type EventDetail struct {
 	Event
 	EventHostDetail `json:"host"`
 	Participants    []EventParticipantDetail `json:"participants"`
+}
+
+type EventDetailResponse struct {
+	Events       []*EventDetail `json:"events"`
+	NextCursorId string         `json:"nextCursorId"`
 }
 
 func (eventDao EventDao) CreateEvent(event *Event) error {
@@ -69,7 +74,7 @@ func (eventDao EventDao) CreateEvent(event *Event) error {
 	return nil
 }
 
-func (eventDao EventDao) GetEvents(filter tools.Filter) ([]*EventDetail, error) {
+func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, error) {
 	validator := tools.NewRequestValidator()
 	filter.Validate(validator)
 
@@ -89,18 +94,18 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) ([]*EventDetail, error) 
 	pagination := ""
 	values := []any{}
 
-	if filter.HasNextCursor() && cursor.ID != nil {
-		pagination += fmt.Sprintf(" WHERE id > $%d ORDER BY id ASC LIMIT $%d", len(values)+1, len(values)+2)
+	if cursor.IsNext && cursor.ID != nil {
+		pagination += fmt.Sprintf(" WHERE event.id > $%d ORDER BY event.id ASC LIMIT $%d", len(values)+1, len(values)+2)
 		values = append(values, cursor.ID, filter.PageSize)
-	} else if filter.HasPrevCursor() && cursor.ID != nil {
-		pagination += fmt.Sprintf(" WHERE id < $%d ORDER BY id DESC LIMIT $%d", len(values)+1, len(values)+2)
+	} else if !cursor.IsNext && cursor.ID != nil {
+		pagination += fmt.Sprintf(" WHERE event.id < $%d ORDER BY event.id DESC LIMIT $%d", len(values)+1, len(values)+2)
 		values = append(values, cursor.ID, filter.PageSize)
+	} else {
+		pagination += fmt.Sprintf(" ORDER BY event.id ASC LIMIT $%d", len(values)+1)
+		values = append(values, filter.PageSize)
 	}
 
 	query := fmt.Sprintf(`
-WITH event AS (
-    SELECT * from sportgether_schema.events %s
-)
 	SELECT 
 	    event.id, 
 	    event_name, 
@@ -113,9 +118,10 @@ WITH event AS (
 	    description, 
 	    username
 
-	FROM event
+	FROM sportgether_schema.events event
 	    INNER JOIN sportgether_schema.users u
 	    ON host_id = u.id
+        %s
 `, pagination)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -127,13 +133,16 @@ WITH event AS (
 		return nil, err
 	}
 
+	res := &EventDetailResponse{}
 	events := []*EventDetail{}
+	lastRowId := cursor.ID
+
 	for rows.Next() {
 		event := EventDetail{
 			Participants: []EventParticipantDetail{},
 		}
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&event.ID,
 			&event.EventName,
 			&event.EventHostDetail.HostId,
@@ -149,11 +158,21 @@ WITH event AS (
 			return nil, err
 		}
 		events = append(events, &event)
+		lastRowId = &event.ID
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return events, nil
+	lastCursor := tools.Cursor{ID: lastRowId, IsNext: true}
+	nextCursorId, e := tools.EncodeToBase32(lastCursor)
+	if e != nil {
+		return nil, e
+	}
+
+	res.NextCursorId = nextCursorId
+	res.Events = events
+
+	return res, nil
 }

@@ -21,7 +21,7 @@ func (app *Application) getAllEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.writeResponse(w, responseData{"events": events}, http.StatusOK, nil)
+	err = app.writeResponse(w, responseData{"events": events.Events, "nextCursorId": events.NextCursorId}, http.StatusOK, nil)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
