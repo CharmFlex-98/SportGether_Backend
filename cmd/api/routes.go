@@ -39,4 +39,5 @@ func userHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/all", app.getAllEvents)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/create", app.createEvent)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/join", app.joinEvent)
 }

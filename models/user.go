@@ -29,13 +29,15 @@ func unauthenticatedUser(user *User) bool {
 }
 
 type User struct {
-	ID        int64     `json:"id"`
-	UserName  string    `json:"username"`
-	Email     string    `json:"email"`
-	Password  password  `json:"password"`
-	CreatedAt time.Time `json:"-"`
-	IsBlocked bool      `json:"is_blocked"`
-	Version   int32     `json:"-"`
+	ID              int64     `json:"id"`
+	UserName        string    `json:"username"`
+	Email           string    `json:"email"`
+	Gender          string    `json:"gender"`
+	ProfileIconName string    `json:"profileIconName"`
+	Password        password  `json:"password"`
+	CreatedAt       time.Time `json:"-"`
+	IsBlocked       bool      `json:"is_blocked"`
+	Version         int32     `json:"-"`
 }
 
 func (dao UserDao) Insert(user *User) error {
@@ -99,6 +101,8 @@ func (dao UserDao) GetByUsername(username string) (*User, error) {
 		&user.ID,
 		&user.UserName,
 		&user.Email,
+		&user.Gender,
+		&user.ProfileIconName,
 		&user.Password.passwordHashed,
 		&user.CreatedAt,
 		&user.IsBlocked,
@@ -128,6 +132,8 @@ func (dao UserDao) GetById(userId int64) (*User, error) {
 		&user.ID,
 		&user.UserName,
 		&user.Email,
+		&user.Gender,
+		&user.ProfileIconName,
 		&user.Password.passwordHashed,
 		&user.CreatedAt,
 		&user.IsBlocked,

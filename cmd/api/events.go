@@ -70,3 +70,24 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 		app.writeInternalServerErrorResponse(w, r)
 	}
 }
+
+func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
+	input := struct {
+		EventId int64 `json:"eventId"`
+	}{}
+	err := app.readRequest(r, &input)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+	}
+	err = app.daos.JoinEvent(input.EventId, user.ID)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}

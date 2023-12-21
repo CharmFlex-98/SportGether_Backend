@@ -59,6 +59,7 @@ func (app *Application) authenticationHandler(nextHandler http.Handler) http.Han
 			case errors.Is(err, constants.UserNotFoundError):
 				app.writeInvalidAuthenticationErrorResponse(w, r)
 			default:
+				app.logError(err, r)
 				app.writeInternalServerErrorResponse(w, r)
 			}
 

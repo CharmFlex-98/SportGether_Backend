@@ -176,3 +176,24 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 
 	return res, nil
 }
+
+func (eventDao EventDao) JoinEvent(eventId int64, participantId int64) error {
+	query := `
+	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
+	VALUES ($1, $2)
+`
+	args := []any{
+		eventId,
+		participantId,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := eventDao.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
