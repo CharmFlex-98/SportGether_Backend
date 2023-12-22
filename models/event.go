@@ -26,15 +26,13 @@ type Event struct {
 	Description         string `json:"description"`
 }
 
-type EventHostDetail struct {
-	HostId       int64  `json:"userId"`
-	HostUsername string `json:"username"`
-}
-
 type EventParticipantDetail struct {
 	ParticipantId       int64  `json:"userId"`
 	ParticipantUsername string `json:"username"`
+	ProfileIconName     string `json:"profileIconName"`
 }
+
+type EventHostDetail EventParticipantDetail
 
 type EventDetail struct {
 	Event
@@ -106,22 +104,25 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 	}
 
 	query := fmt.Sprintf(`
-	SELECT 
+	with event as (select * from sportgether_schema.events event %s) SELECT 
 	    event.id, 
 	    event_name, 
-	    host_id, 
+	    host_id,
+	    u.username as host_name, 
+	    u.profile_icon_name as host_profile_icon_name, 
 	    destination, 
 	    start_time, 
 	    end_time, 
 	    event_type, 
 	    max_participant_count, 
 	    description, 
-	    username
-
-	FROM sportgether_schema.events event
-	    INNER JOIN sportgether_schema.users u
-	    ON host_id = u.id
-        %s
+	    ep.participantid as participant_id, 
+	    u1.username as participant_name,
+	    u1.profile_icon_name as participant_profile_icon_name from event
+	    INNER JOIN sportgether_schema.users u ON host_id = u.id
+	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
+	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
+		ORDER BY event.id ASC
 `, pagination)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -133,32 +134,79 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 		return nil, err
 	}
 
-	res := &EventDetailResponse{}
-	events := []*EventDetail{}
-	lastRowId := cursor.ID
+	type output struct {
+		eventId                    int64
+		eventName                  string
+		hostId                     int64
+		hostName                   string
+		hostProfileIconName        string
+		destination                string
+		startTime                  string
+		endTime                    string
+		eventType                  string
+		maxParticipantCount        int
+		description                string
+		participantId              *int64
+		participantName            *string
+		participantProfileIconName *string
+	}
 
+	eventsMap := make(map[int64]*EventDetail)
+	lastRowId := cursor.ID
 	for rows.Next() {
-		event := EventDetail{
-			Participants: []EventParticipantDetail{},
-		}
+		output := output{}
 
 		err = rows.Scan(
-			&event.ID,
-			&event.EventName,
-			&event.EventHostDetail.HostId,
-			&event.Destination,
-			&event.StartTime,
-			&event.EndTime,
-			&event.EventType,
-			&event.MaxParticipantCount,
-			&event.Description,
-			&event.EventHostDetail.HostUsername,
+			&output.eventId,
+			&output.eventName,
+			&output.hostId,
+			&output.hostName,
+			&output.hostProfileIconName,
+			&output.destination,
+			&output.startTime,
+			&output.endTime,
+			&output.eventType,
+			&output.maxParticipantCount,
+			&output.description,
+			&output.participantId,
+			&output.participantName,
+			&output.participantProfileIconName,
 		)
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, &event)
-		lastRowId = &event.ID
+
+		if _, ok := eventsMap[output.eventId]; !ok {
+			eventsMap[output.eventId] = &EventDetail{
+				Event: Event{
+					ID:                  output.eventId,
+					EventName:           output.eventName,
+					HostId:              output.hostId,
+					StartTime:           output.startTime,
+					EndTime:             output.endTime,
+					Destination:         output.destination,
+					EventType:           output.eventType,
+					MaxParticipantCount: output.maxParticipantCount,
+					Description:         output.description,
+				},
+				EventHostDetail: EventHostDetail{
+					ParticipantId:       output.hostId,
+					ParticipantUsername: output.hostName,
+					ProfileIconName:     output.hostProfileIconName,
+				},
+				Participants: []EventParticipantDetail{},
+			}
+		}
+
+		if output.participantId != nil && output.participantName != nil && output.participantProfileIconName != nil {
+			eventsMap[output.eventId].Participants = append(eventsMap[output.eventId].Participants, EventParticipantDetail{
+				ParticipantId:       *output.participantId,
+				ParticipantUsername: *output.participantName,
+				ProfileIconName:     *output.participantProfileIconName,
+			})
+		}
+
+		lastRowId = &output.eventId
 	}
 
 	if err = rows.Err(); err != nil {
@@ -171,8 +219,14 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 		return nil, e
 	}
 
+	res := &EventDetailResponse{
+		Events: []*EventDetail{},
+	}
+
 	res.NextCursorId = nextCursorId
-	res.Events = events
+	for _, event := range eventsMap {
+		res.Events = append(res.Events, event)
+	}
 
 	return res, nil
 }
