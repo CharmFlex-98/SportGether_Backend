@@ -13,8 +13,13 @@ func (app *Application) getAllEvents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.writeBadRequestResponse(w, r)
 	}
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
 
-	events, err := app.daos.EventDao.GetEvents(filter)
+	events, err := app.daos.EventDao.GetEvents(filter, user)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
@@ -24,6 +29,26 @@ func (app *Application) getAllEvents(w http.ResponseWriter, r *http.Request) {
 	err = app.writeResponse(w, responseData{"events": events.Events, "nextCursorId": events.NextCursorId}, http.StatusOK, nil)
 	if err != nil {
 		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+}
+
+func (app *Application) getUserEvents(w http.ResponseWriter, r *http.Request) {
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	events, err := app.daos.GetUserEvents(user.ID)
+	if err != nil {
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.writeResponse(w, responseData{"userEvents": events.UserEvents}, http.StatusOK, nil)
+	if err != nil {
 		app.writeInternalServerErrorResponse(w, r)
 		return
 	}

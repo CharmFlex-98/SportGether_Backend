@@ -37,12 +37,34 @@ type EventHostDetail EventParticipantDetail
 type EventDetail struct {
 	Event
 	EventHostDetail `json:"host"`
+	IsHost          bool                     `json:"isHost"`
 	Participants    []EventParticipantDetail `json:"participants"`
+}
+
+type UserScheduledEventsResponse struct {
+	UserEvents []*EventDetail `json:"userEvents"`
 }
 
 type EventDetailResponse struct {
 	Events       []*EventDetail `json:"events"`
 	NextCursorId string         `json:"nextCursorId"`
+}
+
+type output struct {
+	eventId                    int64
+	eventName                  string
+	hostId                     int64
+	hostName                   string
+	hostProfileIconName        string
+	destination                string
+	startTime                  string
+	endTime                    string
+	eventType                  string
+	maxParticipantCount        int
+	description                string
+	participantId              *int64
+	participantName            *string
+	participantProfileIconName *string
 }
 
 func (eventDao EventDao) CreateEvent(event *Event) error {
@@ -72,7 +94,7 @@ func (eventDao EventDao) CreateEvent(event *Event) error {
 	return nil
 }
 
-func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, error) {
+func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetailResponse, error) {
 	validator := tools.NewRequestValidator()
 	filter.Validate(validator)
 
@@ -134,23 +156,6 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 		return nil, err
 	}
 
-	type output struct {
-		eventId                    int64
-		eventName                  string
-		hostId                     int64
-		hostName                   string
-		hostProfileIconName        string
-		destination                string
-		startTime                  string
-		endTime                    string
-		eventType                  string
-		maxParticipantCount        int
-		description                string
-		participantId              *int64
-		participantName            *string
-		participantProfileIconName *string
-	}
-
 	eventsMap := make(map[int64]*EventDetail)
 	lastRowId := cursor.ID
 	for rows.Next() {
@@ -189,6 +194,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 					MaxParticipantCount: output.maxParticipantCount,
 					Description:         output.description,
 				},
+				IsHost: output.hostId == user.ID,
 				EventHostDetail: EventHostDetail{
 					ParticipantId:       output.hostId,
 					ParticipantUsername: output.hostName,
@@ -229,6 +235,106 @@ func (eventDao EventDao) GetEvents(filter tools.Filter) (*EventDetailResponse, e
 	}
 
 	return res, nil
+}
+
+func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsResponse, error) {
+	query := `
+		with event as (select * from sportgether_schema.events e where e.host_id = $1) SELECT 
+	    event.id, 
+	    event_name, 
+	    host_id, 
+	    u.username as host_username, 
+	    u.profile_icon_name as host_profile_icon_name, 
+	    destination, 
+	    start_time, 
+	    end_time, 
+	    event_type, 
+	    max_participant_count, 
+	    description, 
+	    p.id as participant_id, 
+	    p.username as participant_username, 
+	    p.profile_icon_name as participant_profile_icon_name
+	    from event
+	    INNER JOIN sportgether_schema.users u ON host_id = u.id
+	    left  join sportgether_schema.event_participant ep on ep.eventid = event.id
+	    left join sportgether_schema.users p on ep.participantid  = p.id
+`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := EventDao.db.QueryContext(ctx, query, userId)
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	eventsMap := make(map[int64]*EventDetail)
+	for rows.Next() {
+		output := output{}
+		err = rows.Scan(
+			&output.eventId,
+			&output.eventName,
+			&output.hostId,
+			&output.hostName,
+			&output.hostProfileIconName,
+			&output.destination,
+			&output.startTime,
+			&output.endTime,
+			&output.eventType,
+			&output.maxParticipantCount,
+			&output.description,
+			&output.participantId,
+			&output.participantName,
+			&output.participantProfileIconName,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := eventsMap[output.eventId]; !ok {
+			eventsMap[output.eventId] = &EventDetail{
+				Event: Event{
+					ID:                  output.eventId,
+					EventName:           output.eventName,
+					HostId:              output.hostId,
+					StartTime:           output.startTime,
+					EndTime:             output.endTime,
+					Destination:         output.destination,
+					EventType:           output.eventType,
+					MaxParticipantCount: output.maxParticipantCount,
+					Description:         output.description,
+				},
+				IsHost: output.hostId == userId,
+				EventHostDetail: EventHostDetail{
+					ParticipantId:       output.hostId,
+					ParticipantUsername: output.hostName,
+					ProfileIconName:     output.hostProfileIconName,
+				},
+				Participants: []EventParticipantDetail{},
+			}
+		}
+
+		if output.participantId != nil && output.participantName != nil && output.participantProfileIconName != nil {
+			eventsMap[output.eventId].Participants = append(eventsMap[output.eventId].Participants, EventParticipantDetail{
+				ParticipantId:       *output.participantId,
+				ParticipantUsername: *output.participantName,
+				ProfileIconName:     *output.participantProfileIconName,
+			})
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	userEvents := []*EventDetail{}
+	for _, value := range eventsMap {
+		userEvents = append(userEvents, value)
+	}
+
+	return &UserScheduledEventsResponse{
+		UserEvents: userEvents,
+	}, nil
 }
 
 func (eventDao EventDao) JoinEvent(eventId int64, participantId int64) error {
