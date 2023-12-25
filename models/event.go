@@ -42,7 +42,16 @@ type EventDetail struct {
 }
 
 type UserScheduledEventsResponse struct {
-	UserEvents []*EventDetail `json:"userEvents"`
+	UserEvents []*UserScheduledEventDetail `json:"userEvents"`
+}
+
+type UserScheduledEventDetail struct {
+	EventId     int64  `json:"eventId"`
+	EventName   string `json:"eventName"`
+	StartTime   string `json:"startTime"`
+	EndTime     string `json:"endTime"`
+	Destination string `json:"destination"`
+	EventType   string `json:"eventType"`
 }
 
 type EventDetailResponse struct {
@@ -71,6 +80,7 @@ func (eventDao EventDao) CreateEvent(event *Event) error {
 	query := `
 	INSERT INTO sportgether_schema.events (event_name, host_id, destination, start_time, end_time, event_type, max_participant_count, description)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	RETURNING id
 `
 	args := []any{
 		event.EventName,
@@ -86,7 +96,7 @@ func (eventDao EventDao) CreateEvent(event *Event) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := eventDao.db.ExecContext(ctx, query, args...)
+	err := eventDao.db.QueryRowContext(ctx, query, args...).Scan(&event.ID)
 	if err != nil {
 		return err
 	}
@@ -239,25 +249,16 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 
 func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsResponse, error) {
 	query := `
-		with event as (select * from sportgether_schema.events e where e.host_id = $1) SELECT 
-	    event.id, 
-	    event_name, 
-	    host_id, 
-	    u.username as host_username, 
-	    u.profile_icon_name as host_profile_icon_name, 
-	    destination, 
-	    start_time, 
-	    end_time, 
-	    event_type, 
-	    max_participant_count, 
-	    description, 
-	    p.id as participant_id, 
-	    p.username as participant_username, 
-	    p.profile_icon_name as participant_profile_icon_name
-	    from event
-	    INNER JOIN sportgether_schema.users u ON host_id = u.id
-	    left  join sportgether_schema.event_participant ep on ep.eventid = event.id
-	    left join sportgether_schema.users p on ep.participantid  = p.id
+  		select 
+  		    e.id, 
+  			e.event_name,
+  			e.start_time, 
+  			e.end_time, 
+  			e.destination, 
+  			e.event_type
+  		from sportgether_schema.event_participant ep 
+  		inner join sportgether_schema.events e on ep.eventId = e.id
+  		WHERE ep.participantId = $1
 `
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -268,68 +269,25 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
 		return nil, err
 	}
 
-	eventsMap := make(map[int64]*EventDetail)
+	userEvents := []*UserScheduledEventDetail{}
 	for rows.Next() {
-		output := output{}
+		event := &UserScheduledEventDetail{}
 		err = rows.Scan(
-			&output.eventId,
-			&output.eventName,
-			&output.hostId,
-			&output.hostName,
-			&output.hostProfileIconName,
-			&output.destination,
-			&output.startTime,
-			&output.endTime,
-			&output.eventType,
-			&output.maxParticipantCount,
-			&output.description,
-			&output.participantId,
-			&output.participantName,
-			&output.participantProfileIconName,
+			&event.EventId,
+			&event.EventName,
+			&event.StartTime,
+			&event.EndTime,
+			&event.Destination,
+			&event.EventType,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		if _, ok := eventsMap[output.eventId]; !ok {
-			eventsMap[output.eventId] = &EventDetail{
-				Event: Event{
-					ID:                  output.eventId,
-					EventName:           output.eventName,
-					HostId:              output.hostId,
-					StartTime:           output.startTime,
-					EndTime:             output.endTime,
-					Destination:         output.destination,
-					EventType:           output.eventType,
-					MaxParticipantCount: output.maxParticipantCount,
-					Description:         output.description,
-				},
-				IsHost: output.hostId == userId,
-				EventHostDetail: EventHostDetail{
-					ParticipantId:       output.hostId,
-					ParticipantUsername: output.hostName,
-					ProfileIconName:     output.hostProfileIconName,
-				},
-				Participants: []EventParticipantDetail{},
-			}
-		}
-
-		if output.participantId != nil && output.participantName != nil && output.participantProfileIconName != nil {
-			eventsMap[output.eventId].Participants = append(eventsMap[output.eventId].Participants, EventParticipantDetail{
-				ParticipantId:       *output.participantId,
-				ParticipantUsername: *output.participantName,
-				ProfileIconName:     *output.participantProfileIconName,
-			})
-		}
+		userEvents = append(userEvents, event)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
-	}
-
-	userEvents := []*EventDetail{}
-	for _, value := range eventsMap {
-		userEvents = append(userEvents, value)
 	}
 
 	return &UserScheduledEventsResponse{

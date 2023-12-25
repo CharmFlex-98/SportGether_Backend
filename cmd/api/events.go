@@ -43,12 +43,14 @@ func (app *Application) getUserEvents(w http.ResponseWriter, r *http.Request) {
 
 	events, err := app.daos.GetUserEvents(user.ID)
 	if err != nil {
+		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 		return
 	}
 
 	err = app.writeResponse(w, responseData{"userEvents": events.UserEvents}, http.StatusOK, nil)
 	if err != nil {
+		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 		return
 	}
@@ -90,6 +92,12 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = app.daos.CreateEvent(event)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+
+	err = app.daos.JoinEvent(event.ID, host.ID)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
