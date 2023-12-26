@@ -91,13 +91,21 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 		Description:         input.Description,
 	}
 
-	err = app.daos.CreateEvent(event)
-	if err != nil {
-		app.logError(err, r)
-		app.writeInternalServerErrorResponse(w, r)
-	}
+	// Create transaction
+	err = app.daos.WithTransaction(func() error {
+		err = app.daos.CreateEvent(event)
+		if err != nil {
+			return err
+		}
 
-	err = app.daos.JoinEvent(event.ID, host.ID)
+		err = app.daos.JoinEvent(event.ID, host.ID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
