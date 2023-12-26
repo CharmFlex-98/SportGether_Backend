@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"strconv"
 )
 
 // Logging
@@ -22,7 +24,7 @@ type responseData map[string]any
 type responseHeader map[string]string
 
 // Json response
-func (app *Application) writeResponse(w http.ResponseWriter, content responseData, code int, headers responseHeader) error {
+func (app *Application) writeResponse(w http.ResponseWriter, content any, code int, headers responseHeader) error {
 	if content == nil {
 		w.WriteHeader(code)
 		return nil
@@ -68,4 +70,14 @@ func (app *Application) readRequest(r *http.Request, input any) error {
 	}
 
 	return nil
+}
+
+func (app *Application) readParam(paramName string, r *http.Request) (*int64, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	value, err := strconv.ParseInt(params.ByName(paramName), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	return &value, nil
 }

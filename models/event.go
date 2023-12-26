@@ -295,6 +295,80 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
 	}, nil
 }
 
+func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail, error) {
+	eventDetail := EventDetail{}
+	query := `
+		WITH event AS (SELECT * FROM sportgether_schema.events e where e.id = $1)
+		SELECT 
+		    event.id, 
+		    event.event_name, 
+		    u.id as host_id, 
+		    u.username as host_username, 
+		    u.profile_icon_name as host_profile_icon_name, 
+		    event.destination, 
+		    event.start_time, 
+		    event.end_time, 
+		    event.event_type, 
+		    event.max_participant_count, 
+		    event.description
+		
+		FROM event
+		INNER JOIN sportgether_schema.users u on event.host_id = u.id
+`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := eventDao.db.QueryRowContext(ctx, query, eventId).Scan(
+		&eventDetail.ID,
+		&eventDetail.EventName,
+		&eventDetail.EventHostDetail.ParticipantId,
+		&eventDetail.EventHostDetail.ParticipantUsername,
+		&eventDetail.EventHostDetail.ProfileIconName,
+		&eventDetail.Destination,
+		&eventDetail.StartTime,
+		&eventDetail.EndTime,
+		&eventDetail.EventType,
+		&eventDetail.MaxParticipantCount,
+		&eventDetail.Description,
+	)
+	if err != nil {
+		return nil, err
+	}
+	eventDetail.IsHost = eventDetail.HostId == userId
+
+	query = `
+	SELECT 
+	    u.id, 
+	    u.username, 
+	    u.profile_icon_name
+	FROM sportgether_schema.event_participant ep 
+	inner join sportgether_schema.users u on u.id = ep.participantid
+	WHERE ep.eventid = $1
+`
+	ctx, cancel1 := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel1()
+
+	row, err := eventDao.db.QueryContext(ctx, query, eventId)
+	if err != nil {
+		return nil, err
+	}
+
+	for row.Next() {
+		participant := EventParticipantDetail{}
+		err := row.Scan(
+			&participant.ParticipantId,
+			&participant.ParticipantUsername,
+			&participant.ProfileIconName,
+		)
+		if err != nil {
+			return nil, err
+		}
+		eventDetail.Participants = append(eventDetail.Participants, participant)
+	}
+
+	return &eventDetail, nil
+}
+
 func (eventDao EventDao) JoinEvent(eventId int64, participantId int64) error {
 	query := `
 	INSERT INTO sportgether_schema.event_participant (eventid, participantid)

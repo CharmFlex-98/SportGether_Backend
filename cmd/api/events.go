@@ -112,6 +112,34 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (app *Application) getEventById(w http.ResponseWriter, r *http.Request) {
+	eventId, err := app.readParam("eventId", r)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	event, err := app.daos.EventDao.GetEventById(*eventId, user.ID)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.writeResponse(w, event, http.StatusOK, nil)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}
+
 func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 	input := struct {
 		EventId int64 `json:"eventId"`
