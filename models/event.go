@@ -60,23 +60,6 @@ type EventDetailResponse struct {
 	NextCursorId string         `json:"nextCursorId"`
 }
 
-type output struct {
-	eventId                    int64
-	eventName                  string
-	hostId                     int64
-	hostName                   string
-	hostProfileIconName        string
-	destination                string
-	startTime                  string
-	endTime                    string
-	eventType                  string
-	maxParticipantCount        int
-	description                string
-	participantId              *int64
-	participantName            *string
-	participantProfileIconName *string
-}
-
 func (eventDao EventDao) CreateEvent(event *Event) error {
 	query := `
 	INSERT INTO sportgether_schema.events (event_name, host_id, destination, start_time, end_time, event_type, max_participant_count, description)
@@ -170,63 +153,53 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	eventsMap := make(map[int64]*EventDetail)
 	lastRowId := cursor.ID
 	for rows.Next() {
-		output := output{}
+		eventDetail := &EventDetail{
+			Participants: []EventParticipantDetail{},
+		}
+		participant := struct {
+			id              *int64
+			name            *string
+			profileIconName *string
+		}{}
 
 		err = rows.Scan(
-			&output.eventId,
-			&output.eventName,
-			&output.hostId,
-			&output.hostName,
-			&output.hostProfileIconName,
-			&output.destination,
-			&output.startTime,
-			&output.endTime,
-			&output.eventType,
-			&output.maxParticipantCount,
-			&output.description,
-			&output.participantId,
-			&output.participantName,
-			&output.participantProfileIconName,
+			&eventDetail.Event.ID,
+			&eventDetail.Event.EventName,
+			&eventDetail.EventHostDetail.ParticipantId,
+			&eventDetail.EventHostDetail.ParticipantUsername,
+			&eventDetail.EventHostDetail.ProfileIconName,
+			&eventDetail.Destination,
+			&eventDetail.StartTime,
+			&eventDetail.EndTime,
+			&eventDetail.EventType,
+			&eventDetail.MaxParticipantCount,
+			&eventDetail.Description,
+			&participant.id,
+			&participant.name,
+			&participant.profileIconName,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, ok := eventsMap[output.eventId]; !ok {
-			eventsMap[output.eventId] = &EventDetail{
-				Event: Event{
-					ID:                  output.eventId,
-					EventName:           output.eventName,
-					HostId:              output.hostId,
-					StartTime:           output.startTime,
-					EndTime:             output.endTime,
-					Destination:         output.destination,
-					EventType:           output.eventType,
-					MaxParticipantCount: output.maxParticipantCount,
-					Description:         output.description,
-				},
-				IsHost: output.hostId == user.ID,
-				EventHostDetail: EventHostDetail{
-					ParticipantId:       output.hostId,
-					ParticipantUsername: output.hostName,
-					ProfileIconName:     output.hostProfileIconName,
-				},
-				Participants: []EventParticipantDetail{},
-			}
+		eventDetail.IsHost = eventDetail.HostId == user.ID
+
+		if _, ok := eventsMap[eventDetail.Event.ID]; !ok {
+			eventsMap[eventDetail.Event.ID] = eventDetail
 		}
 
-		if output.participantId != nil && output.participantName != nil && output.participantProfileIconName != nil {
-			eventsMap[output.eventId].Participants = append(eventsMap[output.eventId].Participants, EventParticipantDetail{
-				ParticipantId:       *output.participantId,
-				ParticipantUsername: *output.participantName,
-				ProfileIconName:     *output.participantProfileIconName,
+		if participant.id != nil && participant.name != nil && participant.profileIconName != nil {
+			eventsMap[eventDetail.Event.ID].Participants = append(eventsMap[eventDetail.Event.ID].Participants, EventParticipantDetail{
+				ParticipantId:       *participant.id,
+				ParticipantUsername: *participant.name,
+				ProfileIconName:     *participant.profileIconName,
 			})
 		}
-		if output.participantId != nil && *output.participantId == user.ID {
-			eventsMap[output.eventId].IsJoined = true
+		if participant.id != nil && *participant.id == user.ID {
+			eventsMap[eventDetail.Event.ID].IsJoined = true
 		}
 
-		lastRowId = &output.eventId
+		lastRowId = &eventDetail.Event.ID
 	}
 
 	if err = rows.Err(); err != nil {
