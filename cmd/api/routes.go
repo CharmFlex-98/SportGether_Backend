@@ -42,4 +42,5 @@ func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/event/:eventId", app.getEventById)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/create", app.createEvent)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/join", app.joinEvent)
+	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/quit/:eventId", app.quitEvent)
 }

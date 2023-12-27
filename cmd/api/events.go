@@ -160,3 +160,24 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 		app.writeInternalServerErrorResponse(w, r)
 	}
 }
+
+func (app *Application) quitEvent(w http.ResponseWriter, r *http.Request) {
+	value, err := app.readParam("eventId", r)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	err = app.daos.EventDao.QuitEvent(*value, user.ID)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}

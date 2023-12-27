@@ -38,6 +38,7 @@ type EventDetail struct {
 	Event
 	EventHostDetail `json:"host"`
 	IsHost          bool                     `json:"isHost"`
+	IsJoined        bool                     `json:"isJoined"`
 	Participants    []EventParticipantDetail `json:"participants"`
 }
 
@@ -221,6 +222,9 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 				ProfileIconName:     *output.participantProfileIconName,
 			})
 		}
+		if output.participantId != nil && *output.participantId == user.ID {
+			eventsMap[output.eventId].IsJoined = true
+		}
 
 		lastRowId = &output.eventId
 	}
@@ -365,6 +369,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 		}
 		eventDetail.Participants = append(eventDetail.Participants, participant)
 	}
+	eventDetail.IsJoined = true
 
 	return &eventDetail, nil
 }
@@ -383,6 +388,21 @@ func (eventDao EventDao) JoinEvent(eventId int64, participantId int64) error {
 	defer cancel()
 
 	_, err := eventDao.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (eventDao EventDao) QuitEvent(eventId int64, userId int64) error {
+	query := `
+		DELETE FROM sportgether_schema.event_participant ep where ep.participantid = $1 and ep.eventid = $2
+`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := eventDao.db.ExecContext(ctx, query, userId, eventId)
 	if err != nil {
 		return err
 	}
