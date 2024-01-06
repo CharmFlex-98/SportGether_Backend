@@ -2,7 +2,7 @@
 %project=sportgether
 %uri=https://github.com/CharmFlex-98/SportGether_Backend
 
-add_schema 2023-11-05T16:30:39Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # add schema
-create_user_table [add_schema] 2023-11-05T16:46:02Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # create user table
-create_event_table 2023-11-27T16:25:40Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event table
-create_event_participant_table 2023-12-21T15:01:14Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event participant table
+01_add_schema 2023-11-05T16:30:39Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # add schema
+02_create_user_table 2023-11-05T16:46:02Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # create user table
+03_create_event_table 2023-11-27T16:25:40Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event table
+04_create_event_participant_table 2023-12-21T15:01:14Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event participant table

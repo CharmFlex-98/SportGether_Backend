@@ -1,5 +1,4 @@
 -- Deploy sportgether:create_user_table to pg
--- requires: add_schema
 
 BEGIN;
 
