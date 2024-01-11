@@ -13,17 +13,22 @@ import (
 type EventDao struct {
 	db *sql.DB
 }
-
+type GeoType struct {
+	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude"`
+}
 type Event struct {
-	ID                  int64  `json:"id"`
-	EventName           string `json:"eventName"`
-	HostId              int64  `json:"-"`
-	StartTime           string `json:"startTime"`
-	EndTime             string `json:"endTime"`
-	Destination         string `json:"destination"`
-	EventType           string `json:"eventType"`
-	MaxParticipantCount int    `json:"maxParticipantCount"`
-	Description         string `json:"description"`
+	ID                  int64   `json:"id"`
+	EventName           string  `json:"eventName"`
+	HostId              int64   `json:"-"`
+	StartTime           string  `json:"startTime"`
+	EndTime             string  `json:"endTime"`
+	Destination         string  `json:"destination"`
+	Distance            float64 `json:"distance"`
+	LongLat             GeoType `json:"longLat"`
+	EventType           string  `json:"eventType"`
+	MaxParticipantCount int     `json:"maxParticipantCount"`
+	Description         string  `json:"description"`
 }
 
 type EventParticipantDetail struct {
@@ -62,14 +67,16 @@ type EventDetailResponse struct {
 
 func (eventDao EventDao) CreateEvent(event *Event) error {
 	query := `
-	INSERT INTO sportgether_schema.events (event_name, host_id, destination, start_time, end_time, event_type, max_participant_count, description)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	INSERT INTO sportgether_schema.events (event_name, host_id, destination, long_lat, start_time, end_time, event_type, max_participant_count, description)
+	VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326), $6, $7, $8, $9, $10)
 	RETURNING id
 `
 	args := []any{
 		event.EventName,
 		event.HostId,
 		event.Destination,
+		event.LongLat.Longitude,
+		event.LongLat.Latitude,
 		event.StartTime,
 		event.EndTime,
 		event.EventType,
@@ -119,6 +126,10 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		values = append(values, filter.PageSize)
 	}
 
+	//fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
+	//fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
+	//values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
+
 	query := fmt.Sprintf(`
 	with event as (select * from sportgether_schema.events event %s) SELECT 
 	    event.id, 
@@ -127,6 +138,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    u.username as host_name, 
 	    u.profile_icon_name as host_profile_icon_name, 
 	    destination, 
+		ST_DistanceSphere(ST_SetSRID(ST_MakePoint(30, 30), 4326), event.long_lat) as distance, 
 	    start_time, 
 	    end_time, 
 	    event_type, 
@@ -138,7 +150,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
-		ORDER BY event.id ASC
+		ORDER BY distance ASC
 `, pagination)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -147,7 +159,12 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	rows, err := eventDao.db.QueryContext(ctx, query, values...)
 	defer rows.Close()
 	if err != nil {
-		return nil, err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, err
+		default:
+			return nil, err
+		}
 	}
 
 	eventsMap := make(map[int64]*EventDetail)
@@ -169,6 +186,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			&eventDetail.EventHostDetail.ParticipantUsername,
 			&eventDetail.EventHostDetail.ProfileIconName,
 			&eventDetail.Destination,
+			&eventDetail.Distance,
 			&eventDetail.StartTime,
 			&eventDetail.EndTime,
 			&eventDetail.EventType,

@@ -58,13 +58,14 @@ func (app *Application) getUserEvents(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 	input := struct {
-		EventName           string `json:"eventName"`
-		StartTime           string `json:"startTime"`
-		EndTime             string `json:"endTime"`
-		Destination         string `json:"destination"`
-		EventType           string `json:"eventType"`
-		MaxParticipantCount int    `json:"maxParticipantCount"`
-		Description         string `json:"description"`
+		EventName           string         `json:"eventName"`
+		StartTime           string         `json:"startTime"`
+		EndTime             string         `json:"endTime"`
+		Destination         string         `json:"destination"`
+		LongLat             models.GeoType `json:"longLat"`
+		EventType           string         `json:"eventType"`
+		MaxParticipantCount int            `json:"maxParticipantCount"`
+		Description         string         `json:"description"`
 	}{}
 
 	err := app.readRequest(r, &input)
@@ -86,6 +87,7 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 		StartTime:           input.StartTime,
 		EndTime:             input.EndTime,
 		Destination:         input.Destination,
+		LongLat:             input.LongLat,
 		EventType:           input.EventType,
 		MaxParticipantCount: input.MaxParticipantCount,
 		Description:         input.Description,

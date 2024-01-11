@@ -10,10 +10,16 @@ type Cursor struct {
 	IsNext bool   `json:"IsNext"`
 }
 
+type UserFromLocationFilter struct {
+	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude"`
+}
+
 type Filter struct {
-	PrevCursor string `json:"prevCursor"`
-	NextCursor string `json:"nextCursor"`
-	PageSize   int    `json:"pageSize"`
+	PrevCursor   string                  `json:"prevCursor"`
+	NextCursor   string                  `json:"nextCursor"`
+	PageSize     int                     `json:"pageSize"`
+	FromLocation *UserFromLocationFilter `json:"fromLocation"`
 }
 
 func (filter Filter) IsCursorEmpty() bool {
