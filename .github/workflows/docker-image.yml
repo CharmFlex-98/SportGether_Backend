@@ -26,5 +26,5 @@ jobs:
         echo "login to dockerhub"
         docker login --username charmflex --password 2506980106Ming
         echo "push to dockerhub"
-        docker push charmflex/sportgether-web
+        docker push charmflex/sportgether_web
       
