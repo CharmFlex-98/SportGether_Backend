@@ -126,9 +126,9 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		values = append(values, filter.PageSize)
 	}
 
-	//fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
-	//fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
-	//values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
+	fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
+	fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
+	values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
 
 	query := fmt.Sprintf(`
 	with event as (select * from sportgether_schema.events event %s) SELECT 
@@ -138,7 +138,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    u.username as host_name, 
 	    u.profile_icon_name as host_profile_icon_name, 
 	    destination, 
-		ST_DistanceSphere(ST_SetSRID(ST_MakePoint(30, 30), 4326), event.long_lat) as distance, 
+		ST_DistanceSphere(ST_SetSRID(ST_MakePoint(%s, %s), 4326), event.long_lat) as distance, 
 	    start_time, 
 	    end_time, 
 	    event_type, 
@@ -151,7 +151,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
 		ORDER BY distance ASC
-`, pagination)
+`, pagination, fromLongitudeArgIndex, fromLatitudeArgIndex)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
