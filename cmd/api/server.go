@@ -16,6 +16,7 @@ func (app *Application) serve() {
 		WriteTimeout: 10 * time.Second,
 	}
 
+	app.logInfo("new commit, test here")
 	app.logInfo("Starting server...")
 	err := server.ListenAndServe()
 	if err != nil {
