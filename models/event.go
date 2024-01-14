@@ -151,7 +151,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
 		ORDER BY distance ASC
-`, pagination, fromLongitudeArgIndex, fromLatitudeArgIndex)
+`, fromLongitudeArgIndex, fromLatitudeArgIndex)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
