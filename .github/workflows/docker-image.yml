@@ -19,6 +19,8 @@ jobs:
         echo "done building..."
     - name:  Upload image to dockerhub
       run: |
+        echo "listing all images"
+        docker images
         echo "renaming image"
         docker tag sportgether-web charmflex/sportgether-web
         echo "login to dockerhub"
