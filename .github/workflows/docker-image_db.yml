@@ -1,0 +1,31 @@
+name: DB Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: 
+      - 'database/*'
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use docker compose to build database service
+      run: |
+        echo "building database image using docker compose..."
+        docker compose build db
+        echo "done building..."
+    - name:  Upload image to dockerhub
+      run: |
+        echo "listing all images"
+        docker images
+        echo "renaming image"
+        docker tag sportgether_backend_db charmflex/sportgether_web
+        echo "login to dockerhub"
+        docker login --username charmflex --password 2506980106Ming
+        echo "push to dockerhub"
+        docker push charmflex/sportgether_db
