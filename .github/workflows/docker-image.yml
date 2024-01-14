@@ -22,7 +22,7 @@ jobs:
         echo "listing all images"
         docker images
         echo "renaming image"
-        docker tag sportgether-web charmflex/sportgether-web
+        docker tag sportgether_backend-web charmflex/sportgether-web
         echo "login to dockerhub"
         docker login --username charmflex --password 2506980106Ming
         echo "push to dockerhub"
