@@ -24,7 +24,7 @@ jobs:
         echo "listing all images"
         docker images
         echo "renaming image"
-        docker tag sportgether_backend_db charmflex/sportgether_web
+        docker tag sportgether_backend_db charmflex/sportgether_db
         echo "login to dockerhub"
         docker login --username charmflex --password 2506980106Ming
         echo "push to dockerhub"
