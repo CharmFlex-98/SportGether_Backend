@@ -131,7 +131,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
 
 	query := fmt.Sprintf(`
-	with event as (select * from sportgether_schema.events event %s) SELECT 
+	with event as (select * from sportgether_schema.events event) SELECT 
 	    event.id, 
 	    event_name, 
 	    host_id,
