@@ -112,23 +112,26 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		return nil, err
 	}
 
-	pagination := ""
+	whereClause := ""
+	orderClause := ""
 	values := []any{}
 
-	if cursor.IsNext && cursor.ID != nil {
-		pagination += fmt.Sprintf(" WHERE event.id > $%d ORDER BY event.id ASC LIMIT $%d", len(values)+1, len(values)+2)
-		values = append(values, cursor.ID, filter.PageSize)
-	} else if !cursor.IsNext && cursor.ID != nil {
-		pagination += fmt.Sprintf(" WHERE event.id < $%d ORDER BY event.id DESC LIMIT $%d", len(values)+1, len(values)+2)
-		values = append(values, cursor.ID, filter.PageSize)
+	//fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
+	//fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
+	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint(%f, %f), 4326), event.long_lat)", filter.FromLocation.Longitude, filter.FromLocation.Latitude)
+
+	if cursor.IsNext && cursor.LastDistance != nil {
+		whereClause += fmt.Sprintf("WHERE %s > %f", distanceQuery, *cursor.LastDistance)
+		orderClause += fmt.Sprintf("ORDER BY distance ASC LIMIT $%d", len(values)+1)
+		values = append(values, filter.PageSize)
+	} else if !cursor.IsNext && cursor.LastDistance != nil {
+		whereClause += fmt.Sprintf("WHERE %s < %f", distanceQuery, *cursor.LastDistance)
+		orderClause += fmt.Sprintf("ORDER BY distance DESC LIMIT $%d", len(values)+1)
+		values = append(values, filter.PageSize)
 	} else {
-		pagination += fmt.Sprintf(" ORDER BY event.id ASC LIMIT $%d", len(values)+1)
+		orderClause += fmt.Sprintf("ORDER BY distance ASC LIMIT $%d", len(values)+1)
 		values = append(values, filter.PageSize)
 	}
-
-	fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
-	fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
-	values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
 
 	query := fmt.Sprintf(`
 	with event as (select * from sportgether_schema.events event %s) SELECT 
@@ -138,7 +141,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    u.username as host_name, 
 	    u.profile_icon_name as host_profile_icon_name, 
 	    destination, 
-		ST_DistanceSphere(ST_SetSRID(ST_MakePoint(%s, %s), 4326), event.long_lat) as distance, 
+		%s as distance, 
 	    start_time, 
 	    end_time, 
 	    event_type, 
@@ -150,8 +153,8 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
-		ORDER BY distance ASC
-`, pagination, fromLongitudeArgIndex, fromLatitudeArgIndex)
+		%s
+`, whereClause, distanceQuery, orderClause)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -168,7 +171,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	}
 
 	eventsMap := make(map[int64]*EventDetail)
-	lastRowId := cursor.ID
+	lastDistance := cursor.LastDistance
 	for rows.Next() {
 		eventDetail := &EventDetail{
 			Participants: []EventParticipantDetail{},
@@ -217,14 +220,14 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			eventsMap[eventDetail.Event.ID].IsJoined = true
 		}
 
-		lastRowId = &eventDetail.Event.ID
+		lastDistance = &eventDetail.Distance
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	lastCursor := tools.Cursor{ID: lastRowId, IsNext: true}
+	lastCursor := tools.Cursor{LastDistance: lastDistance, IsNext: true}
 	nextCursorId, e := tools.EncodeToBase32(lastCursor)
 	if e != nil {
 		return nil, e
