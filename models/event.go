@@ -121,7 +121,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint(%f, %f), 4326), event.long_lat)", filter.FromLocation.Longitude, filter.FromLocation.Latitude)
 
 	if cursor.IsNext && cursor.LastDistance != nil {
-		whereClause += fmt.Sprintf("WHERE %s > %f", distanceQuery, *cursor.LastDistance)
+		whereClause += fmt.Sprintf("WHERE %s > %f", distanceQuery, *cursor.LastDistance+1)
 		orderClause += fmt.Sprintf("ORDER BY distance ASC LIMIT $%d", len(values)+1)
 		values = append(values, filter.PageSize)
 	} else if !cursor.IsNext && cursor.LastDistance != nil {
