@@ -6,8 +6,9 @@ import (
 )
 
 type Cursor struct {
-	LastDistance *float64 `json:"lastDistance"`
-	IsNext       bool     `json:"IsNext"`
+	LastDistance      *float64 `json:"lastDistance"`
+	IsNext            bool     `json:"IsNext"`
+	VisitedEventIndex []int64  `json:"visited"`
 }
 
 type UserFromLocationFilter struct {

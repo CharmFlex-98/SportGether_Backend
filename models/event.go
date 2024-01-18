@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sportgether/tools"
+	"strings"
 	"time"
 )
 
@@ -119,9 +120,14 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	//fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
 	//fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
 	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint(%f, %f), 4326), event.long_lat)", filter.FromLocation.Longitude, filter.FromLocation.Latitude)
+	visitedIndex := make([]string, 0, len(cursor.VisitedEventIndex))
+	for i := range cursor.VisitedEventIndex {
+		visitedIndex = append(visitedIndex, fmt.Sprintf("%d", i))
+	}
+	visitedQuery := fmt.Sprintf("event.id !IN (%s)", strings.Join(visitedIndex, ","))
 
 	if cursor.IsNext && cursor.LastDistance != nil {
-		whereClause += fmt.Sprintf("WHERE %s > %f", distanceQuery, *cursor.LastDistance+1)
+		whereClause += fmt.Sprintf("WHERE %s >= %f AND %s", distanceQuery, *cursor.LastDistance+1, visitedQuery)
 		orderClause += fmt.Sprintf("ORDER BY distance ASC LIMIT $%d", len(values)+1)
 		values = append(values, filter.PageSize)
 	} else if !cursor.IsNext && cursor.LastDistance != nil {
@@ -171,7 +177,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	}
 
 	eventsMap := make(map[int64]*EventDetail)
-	lastDistance := cursor.LastDistance
+	newCursor := &tools.Cursor{IsNext: true}
 	for rows.Next() {
 		eventDetail := &EventDetail{
 			Participants: []EventParticipantDetail{},
@@ -220,15 +226,20 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			eventsMap[eventDetail.Event.ID].IsJoined = true
 		}
 
-		lastDistance = &eventDetail.Distance
+		if newCursor.LastDistance == nil || *newCursor.LastDistance == eventDetail.Distance {
+			newCursor.VisitedEventIndex = append(newCursor.VisitedEventIndex, eventDetail.ID)
+		} else {
+			newCursor.VisitedEventIndex = []int64{eventDetail.ID}
+		}
+
+		newCursor.LastDistance = &eventDetail.Distance
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	lastCursor := tools.Cursor{LastDistance: lastDistance, IsNext: true}
-	nextCursorId, e := tools.EncodeToBase32(lastCursor)
+	nextCursorId, e := tools.EncodeToBase32(newCursor)
 	if e != nil {
 		return nil, e
 	}
