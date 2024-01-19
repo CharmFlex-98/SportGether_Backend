@@ -120,30 +120,25 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	orderClause := ""
 	values := []any{}
 
-	//fromLongitudeArgIndex := fmt.Sprintf("$%d", len(values)+1)
-	//fromLatitudeArgIndex := fmt.Sprintf("$%d", len(values)+2)
-	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint(%f, %f), 4326), event.long_lat)", filter.FromLocation.Longitude, filter.FromLocation.Latitude)
+	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint($%d, $%d), 4326), event.long_lat)", len(values)+1, len(values)+2)
+	values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
+
 	visitedIndex := make([]string, 0, len(cursor.VisitedEventIndex))
 	for i := range cursor.VisitedEventIndex {
 		visitedIndex = append(visitedIndex, fmt.Sprintf("%d", i))
 	}
 	visitedQuery := fmt.Sprintf("event.id NOT IN (%s)", strings.Join(visitedIndex, ","))
 
+	orderClause += fmt.Sprintf("ORDER BY %s ASC LIMIT $%d", distanceQuery, len(values)+1)
+	values = append(values, filter.PageSize)
+
 	if cursor.IsNext && cursor.LastDistance != nil {
-		whereClause += fmt.Sprintf("WHERE %s >= %f AND %s", distanceQuery, *cursor.LastDistance+1, visitedQuery)
-		orderClause += fmt.Sprintf("ORDER BY distance ASC LIMIT $%d", len(values)+1)
-		values = append(values, filter.PageSize)
-	} else if !cursor.IsNext && cursor.LastDistance != nil {
-		whereClause += fmt.Sprintf("WHERE %s < %f", distanceQuery, *cursor.LastDistance)
-		orderClause += fmt.Sprintf("ORDER BY distance DESC LIMIT $%d", len(values)+1)
-		values = append(values, filter.PageSize)
-	} else {
-		orderClause += fmt.Sprintf("ORDER BY distance ASC LIMIT $%d", len(values)+1)
-		values = append(values, filter.PageSize)
+		whereClause += fmt.Sprintf("WHERE %s >= $%d AND %s", distanceQuery, len(values)+1, visitedQuery)
+		values = append(values, *cursor.LastDistance+1)
 	}
 
 	query := fmt.Sprintf(`
-	with event as (select * from sportgether_schema.events event %s) SELECT 
+	with event as (select * from sportgether_schema.events event %s %s) SELECT 
 	    event.id, 
 	    event_name, 
 	    host_id,
@@ -162,8 +157,8 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
-		%s
-`, whereClause, distanceQuery, orderClause)
+		ORDER BY distance
+`, whereClause, orderClause, distanceQuery)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
