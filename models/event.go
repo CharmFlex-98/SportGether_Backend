@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 	"sportgether/tools"
 	"strings"
 	"time"
@@ -97,6 +99,7 @@ func (eventDao EventDao) CreateEvent(event *Event) error {
 }
 
 func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetailResponse, error) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	validator := tools.NewRequestValidator()
 	filter.Validate(validator)
 
@@ -124,7 +127,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	for i := range cursor.VisitedEventIndex {
 		visitedIndex = append(visitedIndex, fmt.Sprintf("%d", i))
 	}
-	visitedQuery := fmt.Sprintf("event.id !IN (%s)", strings.Join(visitedIndex, ","))
+	visitedQuery := fmt.Sprintf("event.id NOT IN (%s)", strings.Join(visitedIndex, ","))
 
 	if cursor.IsNext && cursor.LastDistance != nil {
 		whereClause += fmt.Sprintf("WHERE %s >= %f AND %s", distanceQuery, *cursor.LastDistance+1, visitedQuery)
@@ -172,12 +175,13 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, err
 		default:
+			logger.Error(err.Error())
 			return nil, err
 		}
 	}
 
 	eventsMap := make(map[int64]*EventDetail)
-	newCursor := &tools.Cursor{IsNext: true}
+	newCursor := &tools.Cursor{IsNext: true, LastDistance: cursor.LastDistance, VisitedEventIndex: cursor.VisitedEventIndex}
 	for rows.Next() {
 		eventDetail := &EventDetail{
 			Participants: []EventParticipantDetail{},
