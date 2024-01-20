@@ -117,9 +117,10 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		return nil, err
 	}
 
-	whereClause := ""
-	orderClause := ""
 	values := []any{}
+
+	whereClause := fmt.Sprintf("WHERE event.start_time > $%d", len(values)+1)
+	values = append(values, time.Now())
 
 	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint($%d, $%d), 4326), event.long_lat)", len(values)+1, len(values)+2)
 	values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
@@ -130,11 +131,11 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	}
 	visitedQuery := fmt.Sprintf("event.id NOT IN (%s)", strings.Join(visitedIndex, ","))
 
-	orderClause += fmt.Sprintf("ORDER BY %s ASC LIMIT $%d", distanceQuery, len(values)+1)
+	orderClause := fmt.Sprintf("ORDER BY %s ASC LIMIT $%d", distanceQuery, len(values)+1)
 	values = append(values, filter.PageSize)
 
 	if cursor.IsNext && cursor.LastDistance != nil {
-		whereClause += fmt.Sprintf("WHERE %s >= $%d AND %s", distanceQuery, len(values)+1, visitedQuery)
+		whereClause += fmt.Sprintf(" AND %s >= $%d AND %s", distanceQuery, len(values)+1, visitedQuery)
 		values = append(values, *cursor.LastDistance)
 	}
 
@@ -276,12 +277,12 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
   			e.event_type
   		from sportgether_schema.event_participant ep 
   		inner join sportgether_schema.events e on ep.eventId = e.id
-  		WHERE ep.participantId = $1
+  		WHERE e.start_time > $1 AND ep.participantId = $2
 `
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := EventDao.db.QueryContext(ctx, query, userId)
+	rows, err := EventDao.db.QueryContext(ctx, query, time.Now(), userId)
 	defer rows.Close()
 	if err != nil {
 		return nil, err
