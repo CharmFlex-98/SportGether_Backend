@@ -125,8 +125,8 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	values = append(values, filter.FromLocation.Longitude, filter.FromLocation.Latitude)
 
 	visitedIndex := make([]string, 0, len(cursor.VisitedEventIndex))
-	for i := range cursor.VisitedEventIndex {
-		visitedIndex = append(visitedIndex, fmt.Sprintf("%d", i))
+	for _, value := range cursor.VisitedEventIndex {
+		visitedIndex = append(visitedIndex, fmt.Sprintf("%d", value))
 	}
 	visitedQuery := fmt.Sprintf("event.id NOT IN (%s)", strings.Join(visitedIndex, ","))
 
@@ -157,7 +157,8 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    u1.profile_icon_name as participant_profile_icon_name from event
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
-	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
+	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id
+		ORDER by distance
 `, whereClause, orderClause, distanceQuery)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
