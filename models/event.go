@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"sportgether/tools"
 	"strings"
 	"time"
@@ -157,7 +158,6 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id 
-		ORDER BY distance
 `, whereClause, orderClause, distanceQuery)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -251,6 +251,15 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	for _, event := range eventsMap {
 		res.Events = append(res.Events, event)
 	}
+	slices.SortFunc(res.Events, func(a, b *EventDetail) int {
+		if a.Distance < b.Distance {
+			return -1
+		}
+		if a.Distance > b.Distance {
+			return 1
+		}
+		return 0
+	})
 
 	return res, nil
 }
