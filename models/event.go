@@ -135,7 +135,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 
 	if cursor.IsNext && cursor.LastDistance != nil {
 		whereClause += fmt.Sprintf("WHERE %s >= $%d AND %s", distanceQuery, len(values)+1, visitedQuery)
-		values = append(values, *cursor.LastDistance+1)
+		values = append(values, *cursor.LastDistance)
 	}
 
 	query := fmt.Sprintf(`
