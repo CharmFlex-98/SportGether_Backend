@@ -183,3 +183,39 @@ func (app *Application) quitEvent(w http.ResponseWriter, r *http.Request) {
 		app.writeInternalServerErrorResponse(w, r)
 	}
 }
+
+func (app *Application) getEventHistory(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	pageNumber, err := app.readInt(query, "pageNumber", 0)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	pageSize, err := app.readInt(query, "pageSize", 0)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	res, err := app.daos.EventDao.GetHistory(user.ID, pageNumber, pageSize)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.writeResponse(w, responseData{"history": res}, http.StatusOK, nil)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}

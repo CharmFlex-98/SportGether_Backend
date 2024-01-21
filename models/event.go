@@ -69,6 +69,12 @@ type EventDetailResponse struct {
 	NextCursorId string         `json:"nextCursorId"`
 }
 
+type EventHistoryResponse struct {
+	EventName      string `json:"eventName"`
+	EventStartTime string `json:"eventStartTime"`
+	EventType      string `json:"eventType"`
+}
+
 func (eventDao EventDao) CreateEvent(event *Event) error {
 	query := `
 	INSERT INTO sportgether_schema.events (event_name, host_id, destination, long_lat, start_time, end_time, event_type, max_participant_count, description)
@@ -423,4 +429,51 @@ func (eventDao EventDao) QuitEvent(eventId int64, userId int64) error {
 	}
 
 	return nil
+}
+
+func (eventDao EventDao) GetHistory(userId int64, pageNumber int64, pageSize int64) (*[]EventHistoryResponse, error) {
+	logger := slog.Logger{}
+	query := `
+	SELECT 
+	    event.event_name, 
+	    event.event_type, 
+	    event.start_time
+	FROM sportgether.sportgether_schema.events event
+	INNER JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
+	WHERE event.end_time < $1 AND ep.participantid = $2
+	ORDER BY event.end_time DESC LIMIT $3 OFFSET $4
+`
+	res := []EventHistoryResponse{}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := eventDao.db.QueryContext(ctx, query, time.Now(), userId, pageSize, (pageNumber-1)*pageSize)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, err
+		default:
+			logger.Error(err.Error())
+			return nil, err
+		}
+
+	}
+
+	for rows.Next() {
+		event := EventHistoryResponse{}
+		err := rows.Scan(
+			&event.EventName,
+			&event.EventType,
+			&event.EventStartTime,
+		)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, event)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }

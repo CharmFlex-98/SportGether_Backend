@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -80,4 +81,29 @@ func (app *Application) readParam(paramName string, r *http.Request) (*int64, er
 	}
 
 	return &value, nil
+}
+
+func (app *Application) readString(args url.Values, key string, defaultValue string) string {
+	val := args.Get(key)
+
+	if val == "" {
+		return defaultValue
+	}
+
+	return val
+}
+
+func (app *Application) readInt(args url.Values, key string, defaultValue int64) (int64, error) {
+	val := args.Get(key)
+
+	if val == "" {
+		return defaultValue, nil
+	}
+
+	valInInt, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return valInInt, nil
 }
