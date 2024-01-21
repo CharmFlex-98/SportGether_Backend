@@ -441,7 +441,7 @@ func (eventDao EventDao) GetHistory(userId int64, pageNumber int64, pageSize int
 	FROM sportgether_schema.events event
 	INNER JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	WHERE event.end_time < $1 AND ep.participantid = $2
-	ORDER BY event.end_time DESC LIMIT $3 OFFSET $4
+	ORDER BY event.start_time DESC LIMIT $3 OFFSET $4
 `
 	res := []EventHistoryResponse{}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
