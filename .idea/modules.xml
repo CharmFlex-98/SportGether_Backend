@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$USER_HOME$/Documents/GoProjects/greenlight_ref/.idea/greenlight_ref.iml" filepath="$USER_HOME$/Documents/GoProjects/greenlight_ref/.idea/greenlight_ref.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/sportgether.iml" filepath="$PROJECT_DIR$/.idea/sportgether.iml" />
     </modules>
   </component>

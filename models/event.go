@@ -438,7 +438,7 @@ func (eventDao EventDao) GetHistory(userId int64, pageNumber int64, pageSize int
 	    event.event_name, 
 	    event.event_type, 
 	    event.start_time
-	FROM sportgether.sportgether_schema.events event
+	FROM sportgether_schema.events event
 	INNER JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	WHERE event.end_time < $1 AND ep.participantid = $2
 	ORDER BY event.end_time DESC LIMIT $3 OFFSET $4
