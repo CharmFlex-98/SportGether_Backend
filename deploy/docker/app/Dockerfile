@@ -15,4 +15,4 @@ WORKDIR /sportgether
 COPY --from=builder /sportgether/cmd/api/sportgether_binary ./
 
 
-CMD ["./sportgether/sportgether_binary"]
+CMD ["/sportgether/sportgether_binary"]
