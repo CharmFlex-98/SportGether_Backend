@@ -14,4 +14,4 @@ FROM $BASE_IMAGE
 WORKDIR /app
 COPY --from=builder /sportgether/cmd/api/sportgether_binary ./
 
-CMD ["./data/sportgether_binary"]
+CMD ["./sportgether_binary"]
