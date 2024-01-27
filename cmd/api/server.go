@@ -17,7 +17,8 @@ func (app *Application) serve() {
 	}
 
 	app.logInfo(fmt.Sprintf("Starting server in env=%s", app.config.env))
-	err := server.ListenAndServeTLS("cert.crt", "cert.key")
+	certConfig := app.config.getCertConfig()
+	err := server.ListenAndServeTLS(certConfig.certPath, certConfig.certKey)
 	if err != nil {
 		app.logInfo("error: %s, stopping server...", err)
 		os.Exit(1)
