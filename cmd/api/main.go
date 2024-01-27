@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type sslCertConfig struct {
+	certPath string
+	certKey  string
+}
+
 type config struct {
 	port     int
 	env      string
@@ -18,6 +23,20 @@ type config struct {
 		maxOpenConnection int
 		maxIdleConnection int
 		maxIdleTime       time.Duration
+	}
+}
+
+func (c config) getCertConfig() sslCertConfig {
+	if c.env == "prd" {
+		return sslCertConfig{
+			certPath: "prdCert.crt",
+			certKey:  "prdCert.key",
+		}
+	} else {
+		return sslCertConfig{
+			certPath: "cert.crt",
+			certKey:  "cert.key",
+		}
 	}
 }
 
@@ -32,7 +51,10 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	flag.IntVar(&config.port, "port", 3000, "Port for listening")
-	flag.StringVar(&config.env, "environment", "dev", "environment dev|prd")
+	config.env = os.Getenv("ENV")
+	if config.env == "" {
+		config.env = "DEV"
+	}
 
 	flag.Parse()
 

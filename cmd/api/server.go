@@ -16,11 +16,10 @@ func (app *Application) serve() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	app.logInfo("new commit, test here 2")
-	app.logInfo("Starting server...")
-	err := server.ListenAndServe()
+	app.logInfo(fmt.Sprintf("Starting server in env=%s", app.config.env))
+	err := server.ListenAndServeTLS("cert.crt", "cert.key")
 	if err != nil {
-		app.logInfo("stopping server...")
+		app.logInfo("error: %s, stopping server...", err)
 		os.Exit(1)
 	}
 }
