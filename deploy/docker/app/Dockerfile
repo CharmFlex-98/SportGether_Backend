@@ -11,6 +11,7 @@ WORKDIR ./cmd/api
 RUN env GOOS=linux GOARCH=amd64 go build -o ./sportgether_binary
 
 FROM $BASE_IMAGE
+WORKDIR /app
 COPY --from=builder /sportgether/cmd/api/sportgether_binary ./
 
 CMD ["./data/sportgether_binary"]
