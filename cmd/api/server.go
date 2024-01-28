@@ -23,7 +23,7 @@ func (app *Application) serve() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	fmt.Println(f.Name())
+	//fmt.Println(f.Name())
 	certConfig := app.config.getCertConfig()
 	app.logInfo("What is the cert? %s %s", certConfig.certPath, certConfig.certKey)
 	err = server.ListenAndServeTLS(certConfig.certPath, certConfig.certKey)
