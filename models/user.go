@@ -152,6 +152,23 @@ func (dao UserDao) GetById(userId int64) (*User, error) {
 	return user, nil
 }
 
+func (dao UserDao) UpdateProfileIconUrl(userId int64, url string) error {
+	query := `
+		UPDATE sportgether_schema.users u
+		SET profile_icon_name = $1
+		WHERE id = $2
+`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := dao.db.ExecContext(ctx, query, url, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // UniqueConstrainError Constant
 func UniqueConstrainError(err error, columnName string) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("duplicate key value violates unique constraint %q", "users_"+columnName+"_key"))
