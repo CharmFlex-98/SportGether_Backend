@@ -25,6 +25,7 @@ func (app *Application) serve() {
 	defer f.Close()
 	fmt.Println(f.Name())
 	certConfig := app.config.getCertConfig()
+	app.logInfo("%s %s", certConfig.certPath, certConfig.certKey)
 	err = server.ListenAndServeTLS(certConfig.certPath, certConfig.certKey)
 	if err != nil {
 		app.logInfo("error: %s, stopping server...", err)
