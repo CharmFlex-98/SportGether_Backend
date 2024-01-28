@@ -26,7 +26,7 @@ func (app *Application) serve() {
 	//fmt.Println(f.Name())
 	certConfig := app.config.getCertConfig()
 	app.logInfo(fmt.Sprintf("What is the cert? %s %s", certConfig.certPath, certConfig.certKey))
-	err = server.ListenAndServe()
+	err = server.ListenAndServeTLS(certConfig.certPath, certConfig.certKey)
 	if err != nil {
 		app.logInfo("error: %s, stopping server...", err)
 		os.Exit(1)

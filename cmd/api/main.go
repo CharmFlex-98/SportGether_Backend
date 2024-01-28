@@ -29,8 +29,8 @@ type config struct {
 func (c config) getCertConfig() sslCertConfig {
 	if c.env == "PRD" {
 		return sslCertConfig{
-			certPath: "./cert/prd_cert.pem",
-			certKey:  "./cert/prd_key.pem",
+			certPath: "./cert/prd_ca_cert.pem",
+			certKey:  "./cert/prd_ca_key.pem",
 		}
 	} else {
 		return sslCertConfig{
