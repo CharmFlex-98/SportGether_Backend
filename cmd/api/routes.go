@@ -14,6 +14,7 @@ func (app *Application) routes() http.Handler {
 
 	userHandlerFunc(app, httpRouter)
 	eventHandlerFunc(app, httpRouter)
+	profileHandlerFunc(app, httpRouter)
 
 	return app.authenticationHandler(httpRouter)
 	//return httpRouter
@@ -34,7 +35,14 @@ func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 func userHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/register", app.registerUser)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/login", app.loginUser)
-	httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile-icon", app.updateProfileIcon)
+	//httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile-icon", app.updateProfileIcon)
+}
+
+func profileHandlerFunc(app *Application, httpRouter *httprouter.Router) {
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/onboard-status", app.checkIfUserOnboarded)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/profile/setup", app.onboardUser)
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile", app.getUserProfileDetail)
+	httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile/update", app.updateUserProfile)
 }
 
 func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {

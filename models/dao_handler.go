@@ -8,6 +8,7 @@ type Daos struct {
 	database *sql.DB
 	UserDao
 	EventDao
+	UserProfileDao
 }
 
 func NewDaoHandler(database *sql.DB) Daos {
@@ -17,6 +18,9 @@ func NewDaoHandler(database *sql.DB) Daos {
 			database,
 		},
 		EventDao{
+			db: database,
+		},
+		UserProfileDao{
 			db: database,
 		},
 	}

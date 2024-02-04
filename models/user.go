@@ -29,15 +29,16 @@ func unauthenticatedUser(user *User) bool {
 }
 
 type User struct {
-	ID              int64     `json:"id"`
-	UserName        string    `json:"username"`
-	Email           string    `json:"email"`
-	Gender          string    `json:"gender"`
-	ProfileIconName string    `json:"profileIconName"`
-	Password        password  `json:"password"`
-	CreatedAt       time.Time `json:"-"`
-	IsBlocked       bool      `json:"is_blocked"`
-	Version         int32     `json:"-"`
+	ID        int64     `json:"id"`
+	UserName  string    `json:"username"`
+	Email     string    `json:"email"`
+	Password  password  `json:"password"`
+	Status    string    `json:"-"`
+	CreatedAt time.Time `json:"-"`
+	Version   int32     `json:"-"`
+}
+
+type UserStatus struct {
 }
 
 func (dao UserDao) Insert(user *User) error {
@@ -100,12 +101,10 @@ func (dao UserDao) GetByUsername(username string) (*User, error) {
 	err := dao.db.QueryRowContext(ctx, query, username).Scan(
 		&user.ID,
 		&user.UserName,
-		&user.Email,
-		&user.Gender,
-		&user.ProfileIconName,
 		&user.Password.passwordHashed,
+		&user.Email,
+		&user.Status,
 		&user.CreatedAt,
-		&user.IsBlocked,
 		&user.Version,
 	)
 
@@ -132,11 +131,9 @@ func (dao UserDao) GetById(userId int64) (*User, error) {
 		&user.ID,
 		&user.UserName,
 		&user.Email,
-		&user.Gender,
-		&user.ProfileIconName,
 		&user.Password.passwordHashed,
+		&user.Status,
 		&user.CreatedAt,
-		&user.IsBlocked,
 		&user.Version,
 	)
 
@@ -152,23 +149,25 @@ func (dao UserDao) GetById(userId int64) (*User, error) {
 	return user, nil
 }
 
-func (dao UserDao) UpdateProfileIconUrl(userId int64, url string) error {
-	query := `
-		UPDATE sportgether_schema.users u
-		SET profile_icon_name = $1
-		WHERE id = $2
-`
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	_, err := dao.db.ExecContext(ctx, query, url, userId)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
+//	func (dao UserDao) UpdateProfileIconUrl(userId int64, url string) error {
+//		query := `
+//			UPDATE sportgether_schema.users u
+//			SET profile_icon_name = $1
+//			WHERE id = $2
+//
+// `
+//
+//		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+//		defer cancel()
+//
+//		_, err := dao.db.ExecContext(ctx, query, url, userId)
+//		if err != nil {
+//			return err
+//		}
+//
+//		return nil
+//	}
+//
 // UniqueConstrainError Constant
 func UniqueConstrainError(err error, columnName string) bool {
 	return strings.Contains(err.Error(), fmt.Sprintf("duplicate key value violates unique constraint %q", "users_"+columnName+"_key"))
