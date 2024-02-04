@@ -224,7 +224,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			eventsMap[eventDetail.Event.ID] = eventDetail
 		}
 
-		if participant.id != nil && participant.name != nil && participant.profileIconUrl != nil {
+		if participant.id != nil && participant.name != nil {
 			eventsMap[eventDetail.Event.ID].Participants = append(eventsMap[eventDetail.Event.ID].Participants, EventParticipantDetail{
 				ParticipantId:       *participant.id,
 				ParticipantUsername: *participant.name,
