@@ -161,11 +161,12 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    description, 
 	    ep.participantid as participant_id, 
 	    u1.username as participant_name,
-	    up.profile_icon_url as participant_profile_icon_url from event
+	    pup.profile_icon_url as participant_profile_icon_url from event
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 		LEFT JOIN sportgether_schema.user_profile up ON host_id = up.user_id
 	    LEFT JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
 	    LEFT join sportgether_schema.users u1 on ep.participantid = u1.id
+		LEFT join sportgether_schema.user_profile pup on u1.id = pup.user_id
 		ORDER by distance
 `, whereClause, orderClause, distanceQuery)
 
