@@ -5,13 +5,14 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS sportgether_schema.users(
     id bigserial PRIMARY KEY,
     username text NOT NULL UNIQUE,
-    email text NOT NULL UNIQUE,
-    gender text NOT NULL DEFAULT 'MALE',
-    profile_icon_name text NOT NULL DEFAULT 'CHINESE_BOY',
     password text NOT NULL,
-    created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
-    is_blocked bool NOT NULL DEFAULT false,
+    email text NOT NULL UNIQUE,
+    status text NOT NULL DEFAULT 'ACTIVE',
+    created_at timestamp(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
     version int NOT NULL DEFAULT 1
 );
 
 COMMIT;
+
+
+-- Status can be ACTIVE, BLOCKED

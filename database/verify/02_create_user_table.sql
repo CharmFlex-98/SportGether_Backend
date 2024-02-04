@@ -2,7 +2,7 @@
 
 BEGIN;
 
-SELECT id, username, email, created_at, is_blocked, version, gender, profile_icon_name
+SELECT id, username, password, email, status, created_at, version
 FROM sportgether_schema.users
 WHERE FALSE;
 

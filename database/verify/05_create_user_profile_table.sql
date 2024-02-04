@@ -5,8 +5,9 @@ BEGIN;
 SELECT user_id,
        preferred_name,
        gender,
-       birthday,
+       birth_date,
        join_date,
+       status,
        profile_icon_url,
        signature,
        memo

@@ -7,11 +7,15 @@ CREATE table if not exists sportgether_schema.user_profile
     user_id bigserial PRIMARY KEY NOT NULL REFERENCES sportgether_schema.users on DELETE CASCADE,
     preferred_name text NOT NULL,
     gender text NOT NULL,
-    birthday timestamp(0) with time zone NOT NULL,
-    join_date date,
+    birth_date date,
+    join_date date NOT NULL DEFAULT now(),
+    status text NOT NULL DEFAULT 'NOT_ONBOARDED',
     profile_icon_url text,
     signature text,
     memo text
 );
 
 COMMIT;
+
+
+-- status can be NOT_ONBOARDED, ONBOARDED
