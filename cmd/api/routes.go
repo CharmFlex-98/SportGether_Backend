@@ -15,6 +15,7 @@ func (app *Application) routes() http.Handler {
 	userHandlerFunc(app, httpRouter)
 	eventHandlerFunc(app, httpRouter)
 	profileHandlerFunc(app, httpRouter)
+	messageCentreHandlerFunc(app, httpRouter)
 
 	return app.authenticationHandler(httpRouter)
 	//return httpRouter
@@ -53,4 +54,8 @@ func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/join", app.joinEvent)
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/event-history/all", app.getEventHistory)
 	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/quit/:eventId", app.quitEvent)
+}
+
+func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/main", app.getAllEvents)
 }
