@@ -13,7 +13,7 @@ type MainMessage struct {
 }
 
 func (app *Application) getMainMessage(w http.ResponseWriter, r *http.Request) {
-	file, err := os.Open("./data/main_message_config")
+	file, err := os.Open("./data/main_message_config.json")
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
