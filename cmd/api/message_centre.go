@@ -8,8 +8,9 @@ import (
 )
 
 type MainMessage struct {
-	Title    string `json:"title"`
-	Subtitle string `json:"subtitle"`
+	Title      string `json:"title"`
+	Subtitle   string `json:"subtitle"`
+	ButtonText string `json:"buttonText"`
 }
 
 func (app *Application) getMainMessage(w http.ResponseWriter, r *http.Request) {
