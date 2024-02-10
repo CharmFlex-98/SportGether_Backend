@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"sportgether/remote_config"
 	"sportgether/tools"
 	"strings"
 	"time"
@@ -56,12 +57,13 @@ type UserScheduledEventsResponse struct {
 }
 
 type UserScheduledEventDetail struct {
-	EventId     int64  `json:"eventId"`
-	EventName   string `json:"eventName"`
-	StartTime   string `json:"startTime"`
-	EndTime     string `json:"endTime"`
-	Destination string `json:"destination"`
-	EventType   string `json:"eventType"`
+	EventId       int64  `json:"eventId"`
+	EventName     string `json:"eventName"`
+	StartTime     string `json:"startTime"`
+	EndTime       string `json:"endTime"`
+	Destination   string `json:"destination"`
+	EventType     string `json:"eventType"`
+	SportImageUrl string `json:"sportImageUrl"`
 }
 
 type EventDetailResponse struct {
@@ -307,6 +309,10 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
 			&event.Destination,
 			&event.EventType,
 		)
+		if err != nil {
+			return nil, err
+		}
+		event.SportImageUrl, err = remote_config.FromSportToImageUrl(event.EventType)
 		if err != nil {
 			return nil, err
 		}

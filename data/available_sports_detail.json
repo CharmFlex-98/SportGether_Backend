@@ -1,0 +1,14 @@
+{
+  "sports": [
+    {
+      "index": 1,
+      "sport": "BADMINTON",
+      "imageUrl": "https://cdn.pixabay.com/photo/2016/05/31/23/21/badminton-1428046_1280.jpg"
+    },
+    {
+      "index": 2,
+      "sport": "HIKING",
+      "imageUrl": "https://www.shutterstock.com/image-photo/group-four-hikers-backpacks-walks-260nw-1909533559.jpg"
+    }
+  ]
+}

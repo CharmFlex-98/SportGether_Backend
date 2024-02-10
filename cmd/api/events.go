@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"sportgether/constants"
 	"sportgether/models"
 	"sportgether/tools"
 )
@@ -44,7 +45,13 @@ func (app *Application) getUserEvents(w http.ResponseWriter, r *http.Request) {
 	events, err := app.daos.GetUserEvents(user.ID)
 	if err != nil {
 		app.logError(err, r)
-		app.writeInternalServerErrorResponse(w, r)
+
+		switch {
+		case errors.Is(err, constants.SportConfigNotFoundError):
+			app.writeBadRequestResponse(w, r)
+		default:
+			app.writeInternalServerErrorResponse(w, r)
+		}
 		return
 	}
 
