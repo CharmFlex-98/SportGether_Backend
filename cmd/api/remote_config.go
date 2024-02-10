@@ -13,7 +13,7 @@ type MainMessage struct {
 
 func (app *Application) getMainMessage(w http.ResponseWriter, r *http.Request) {
 	mainMessage := MainMessage{}
-	err := readJsonFromFile("./data/main_message_config.json", mainMessage)
+	err := readJsonFromFile("./data/main_message_config.json", &mainMessage)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
@@ -30,14 +30,14 @@ func (app *Application) getMainMessage(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) getSportDetails(w http.ResponseWriter, r *http.Request) {
 	sportDetails := remoteConfig.SportDetails{}
-	err := readJsonFromFile("./data/available_sports_detail.json", sportDetails)
+	err := readJsonFromFile("./data/available_sports_detail.json", &sportDetails)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 		return
 	}
 
-	err = app.writeResponse(w, responseData{"sports": sportDetails}, http.StatusOK, nil)
+	err = app.writeResponse(w, sportDetails, http.StatusOK, nil)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)

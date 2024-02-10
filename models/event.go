@@ -127,7 +127,17 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 
 	values := []any{}
 
+	eventTypeQueryPlaceHolder := make([]string, 0, len(filter.EventTypes))
+	for _, value := range filter.EventTypes {
+		eventTypeQueryPlaceHolder = append(eventTypeQueryPlaceHolder, fmt.Sprintf("$%d", len(values)+1))
+		values = append(values, value)
+	}
+	eventTypeQuery := fmt.Sprintf("event.event_type IN (%s)", strings.Join(eventTypeQueryPlaceHolder, ","))
+
 	whereClause := fmt.Sprintf("WHERE event.start_time > $%d", len(values)+1)
+	if len(filter.EventTypes) > 0 {
+		whereClause += fmt.Sprintf(" AND %s", eventTypeQuery)
+	}
 	values = append(values, time.Now())
 
 	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint($%d, $%d), 4326), event.long_lat)", len(values)+1, len(values)+2)

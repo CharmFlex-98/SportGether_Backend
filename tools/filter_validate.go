@@ -20,6 +20,7 @@ type Filter struct {
 	PrevCursor   string                  `json:"prevCursor"`
 	NextCursor   string                  `json:"nextCursor"`
 	PageSize     int                     `json:"pageSize"`
+	EventTypes   []string                `json:"eventTypes"`
 	FromLocation *UserFromLocationFilter `json:"fromLocation"`
 }
 
