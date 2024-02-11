@@ -18,4 +18,5 @@ CREATE TABLE IF NOT EXISTS sportgether_schema.events
     version               int                         NOT NULL DEFAULT 1
 );
 
+
 COMMIT;
