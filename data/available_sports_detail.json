@@ -9,6 +9,16 @@
       "index": 2,
       "sport": "HIKING",
       "imageUrl": "https://www.shutterstock.com/image-photo/group-four-hikers-backpacks-walks-260nw-1909533559.jpg"
+    },
+    {
+      "index": 3,
+      "sport": "YOGA",
+      "imageUrl": "https://img.freepik.com/premium-photo/woman-doing-yoga-beach-with-mountain-background_865967-25537.jpg"
+    },
+    {
+      "index": 4,
+      "sport": "BASKETBALL",
+      "imageUrl": "https://img.freepik.com/free-photo/basketball-game-concept_23-2150910692.jpg?size=626&ext=jpg&ga=GA1.1.87170709.1707523200&semt=sph"
     }
   ]
 }

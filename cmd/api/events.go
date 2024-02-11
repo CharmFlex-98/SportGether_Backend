@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"sportgether/constants"
 	"sportgether/models"
@@ -189,6 +190,36 @@ func (app *Application) quitEvent(w http.ResponseWriter, r *http.Request) {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 	}
+}
+
+func (app *Application) deleteEvent(w http.ResponseWriter, r *http.Request) {
+	value, err := app.readParam("eventId", r)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	detail, err := app.daos.GetEventById(*value, user.ID)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	if !detail.IsHost {
+		app.logError(errors.New(fmt.Sprintf("this user = %d cannot delete this event as no authority right", user.ID)), r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	err = app.daos.EventDao.DeleteEvent(*value)
 }
 
 func (app *Application) getEventHistory(w http.ResponseWriter, r *http.Request) {

@@ -10,7 +10,9 @@ SELECT id,
        destination,
        event_type,
        max_participant_count,
-       description
+       description,
+       deleted,
+       version
 FROM sportgether_schema.events
 WHERE false;
 

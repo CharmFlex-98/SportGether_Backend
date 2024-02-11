@@ -43,6 +43,7 @@ func profileHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/onboard-status", app.checkIfUserOnboarded)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/profile/setup", app.onboardUser)
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile", app.getUserProfileDetail)
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/other/:userId", app.getOtherUserProfileDetail)
 	httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile/update", app.updateUserProfile)
 }
 
@@ -54,6 +55,7 @@ func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/join", app.joinEvent)
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/event-history/all", app.getEventHistory)
 	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/quit/:eventId", app.quitEvent)
+	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/delete/:eventId", app.deleteEvent)
 }
 
 func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {

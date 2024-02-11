@@ -10,7 +10,8 @@ SELECT user_id,
        status,
        profile_icon_url,
        signature,
-       memo
+       memo,
+       version
 FROM sportgether_schema.user_profile
 WHERE false;
 

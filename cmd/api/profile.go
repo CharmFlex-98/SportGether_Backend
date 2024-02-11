@@ -141,3 +141,23 @@ func (app *Application) getUserProfileDetail(w http.ResponseWriter, r *http.Requ
 		app.logError(err, r)
 	}
 }
+
+func (app *Application) getOtherUserProfileDetail(w http.ResponseWriter, r *http.Request) {
+	userId, err := app.readParam("userId", r)
+	if err != nil {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	userProfileDetail, err := app.daos.GetProfileDetail(*userId)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.writeResponse(w, responseData{"profileDetail": userProfileDetail}, http.StatusOK, nil)
+	if err != nil {
+		app.logError(err, r)
+	}
+}

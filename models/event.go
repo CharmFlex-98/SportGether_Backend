@@ -49,8 +49,17 @@ type EventDetail struct {
 	EventHostDetail `json:"host"`
 	IsHost          bool                     `json:"isHost"`
 	IsJoined        bool                     `json:"isJoined"`
+	Status          EventStatus              `json:"status"`
 	Participants    []EventParticipantDetail `json:"participants"`
+	Version         int                      `json:"version"`
 }
+
+type EventStatus string
+
+var (
+	full      = EventStatus("FULL")
+	available = EventStatus("AVAILABLE")
+)
 
 type UserScheduledEventsResponse struct {
 	UserEvents []*UserScheduledEventDetail `json:"userEvents"`
@@ -63,6 +72,7 @@ type UserScheduledEventDetail struct {
 	EndTime       string `json:"endTime"`
 	Destination   string `json:"destination"`
 	EventType     string `json:"eventType"`
+	Deleted       bool   `json:"isDeleted"`
 	SportImageUrl string `json:"sportImageUrl"`
 }
 
@@ -132,12 +142,15 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		eventTypeQueryPlaceHolder = append(eventTypeQueryPlaceHolder, fmt.Sprintf("$%d", len(values)+1))
 		values = append(values, value)
 	}
-	eventTypeQuery := fmt.Sprintf("event.event_type IN (%s)", strings.Join(eventTypeQueryPlaceHolder, ","))
-
-	whereClause := fmt.Sprintf("WHERE event.start_time > $%d", len(values)+1)
+	var eventTypeQuery = ""
 	if len(filter.EventTypes) > 0 {
-		whereClause += fmt.Sprintf(" AND %s", eventTypeQuery)
+		eventTypeQuery = fmt.Sprintf(" event.event_type IN (%s)", strings.Join(eventTypeQueryPlaceHolder, ","))
+	} else {
+		eventTypeQuery = fmt.Sprintf(" event.event_type IN ($%d)", len(values)+1)
+		values = append(values, "-1")
 	}
+
+	whereClause := fmt.Sprintf("WHERE event.start_time > $%d AND %s AND event.deleted IS FALSE", len(values)+1, eventTypeQuery)
 	values = append(values, time.Now())
 
 	distanceQuery := fmt.Sprintf("ST_DistanceSphere(ST_SetSRID(ST_MakePoint($%d, $%d), 4326), event.long_lat)", len(values)+1, len(values)+2)
@@ -230,7 +243,9 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			return nil, err
 		}
 
+		eventDetail.HostId = eventDetail.EventHostDetail.ParticipantId
 		eventDetail.IsHost = eventDetail.HostId == user.ID
+		appendEventStatus(eventDetail)
 
 		if _, ok := eventsMap[eventDetail.Event.ID]; !ok {
 			eventsMap[eventDetail.Event.ID] = eventDetail
@@ -286,6 +301,15 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	return res, nil
 }
 
+func appendEventStatus(detail *EventDetail) {
+	switch {
+	case len(detail.Participants) >= detail.MaxParticipantCount:
+		detail.Status = full
+	default:
+		detail.Status = available
+	}
+}
+
 func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsResponse, error) {
 	query := `
   		select 
@@ -294,7 +318,8 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
   			e.start_time, 
   			e.end_time, 
   			e.destination, 
-  			e.event_type
+  			e.event_type, 
+  			e.deleted
   		from sportgether_schema.event_participant ep 
   		inner join sportgether_schema.events e on ep.eventId = e.id
   		WHERE e.start_time > $1 AND ep.participantId = $2
@@ -318,6 +343,7 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
 			&event.EndTime,
 			&event.Destination,
 			&event.EventType,
+			&event.Deleted,
 		)
 		if err != nil {
 			return nil, err
@@ -378,6 +404,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 	if err != nil {
 		return nil, err
 	}
+	eventDetail.HostId = eventDetail.EventHostDetail.ParticipantId
 	eventDetail.IsHost = eventDetail.HostId == userId
 
 	query = `
@@ -451,6 +478,23 @@ func (eventDao EventDao) QuitEvent(eventId int64, userId int64) error {
 	return nil
 }
 
+func (eventDao EventDao) DeleteEvent(eventId int64) error {
+	query := `
+		UPDATE sportgether_schema.events
+		    SET deleted = $1
+		WHERE id = $2
+`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := eventDao.db.ExecContext(ctx, query, true, eventId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (eventDao EventDao) GetHistory(userId int64, pageNumber int64, pageSize int64) (*[]EventHistoryResponse, error) {
 	logger := slog.Logger{}
 	query := `
@@ -460,7 +504,7 @@ func (eventDao EventDao) GetHistory(userId int64, pageNumber int64, pageSize int
 	    event.start_time
 	FROM sportgether_schema.events event
 	INNER JOIN sportgether_schema.event_participant ep on ep.eventid = event.id
-	WHERE event.end_time < $1 AND ep.participantid = $2
+	WHERE event.end_time < $1 AND ep.participantid = $2 AND event.deleted IS FALSE
 	ORDER BY event.start_time DESC LIMIT $3 OFFSET $4
 `
 	res := []EventHistoryResponse{}

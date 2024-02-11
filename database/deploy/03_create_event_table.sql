@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS sportgether_schema.events
     long_lat              geometry(point, 4326)       NOT NULL,
     event_type            text                        NOT NULL,
     max_participant_count int                         NOT NULL,
-    description           text
+    description           text,
+    deleted               bool                        NOT NULL DEFAULT false,
+    version               int                         NOT NULL DEFAULT 1
 );
 
 COMMIT;
