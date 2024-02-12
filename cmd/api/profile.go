@@ -80,6 +80,12 @@ func (app *Application) onboardUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	onboarded, err := app.daos.OnboardUser(user.ID, *input.PreferredName, *input.BirthDate, *input.Gender)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
 	err = app.writeResponse(w, responseData{"onboarded": onboarded}, http.StatusCreated, nil)
 	if err != nil {
 		app.logError(err, r)
