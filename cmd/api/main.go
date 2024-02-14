@@ -2,8 +2,11 @@ package main // "main" indicating this is main app, not library. Other files can
 import (
 	"context"
 	"database/sql"
+	firebase "firebase.google.com/go/v4"
 	"flag"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"google.golang.org/api/option"
+	"log"
 	"log/slog"
 	"os"
 	"sportgether/models"
@@ -41,9 +44,10 @@ func (c config) getCertConfig() sslCertConfig {
 }
 
 type Application struct {
-	config config
-	logger *slog.Logger
-	daos   models.Daos
+	config      config
+	logger      *slog.Logger
+	daos        models.Daos
+	firebaseApp *firebase.App
 }
 
 func main() {
@@ -56,6 +60,12 @@ func main() {
 		config.env = "DEV"
 	}
 
+	opt := option.WithCredentialsFile("./service-account-file.json")
+	firebaseApp, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		log.Fatalf("error initializing app: %v\n", err)
+	}
+
 	flag.Parse()
 
 	db, err := config.openDatabase()
@@ -65,9 +75,10 @@ func main() {
 	}
 
 	app := Application{
-		config: config,
-		logger: logger,
-		daos:   models.NewDaoHandler(db),
+		config:      config,
+		logger:      logger,
+		daos:        models.NewDaoHandler(db),
+		firebaseApp: firebaseApp,
 	}
 
 	app.serve()

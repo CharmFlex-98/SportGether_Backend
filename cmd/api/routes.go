@@ -61,4 +61,5 @@ func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/sports/all", app.getSportDetails)
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/main", app.getMainMessage)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/message-centre/register", app.registerFirebaseToken)
 }

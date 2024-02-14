@@ -220,6 +220,17 @@ func (app *Application) deleteEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = app.daos.EventDao.DeleteEvent(*value)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.broadcastEventDeletedMessage(*value)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
 }
 
 func (app *Application) getEventHistory(w http.ResponseWriter, r *http.Request) {

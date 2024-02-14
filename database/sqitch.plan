@@ -7,3 +7,4 @@
 03_create_event_table 2023-11-27T16:25:40Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event table
 04_create_event_participant_table 2023-12-21T15:01:14Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create event participant table
 05_create_user_profile_table 2024-02-03T15:24:27Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # create user profile table
+06_create_firebase_messaging_token 2024-02-14T09:53:03Z ext.jiaming.luk <ext.jiaming.luk@gxbank.net> # Create firebase messaging token table
