@@ -1,2 +1,2 @@
 deploy/server
-service-account-file.json
+data/service-account-file.json
