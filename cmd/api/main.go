@@ -60,7 +60,7 @@ func main() {
 		config.env = "DEV"
 	}
 
-	opt := option.WithCredentialsFile(".data/service-account-file.json")
+	opt := option.WithCredentialsFile("./data/service-account-file.json")
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		log.Fatalf("error initializing app: %v\n", err)
