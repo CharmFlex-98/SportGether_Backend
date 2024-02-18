@@ -11,6 +11,7 @@ import (
 	"slices"
 	"sportgether/remote_config"
 	"sportgether/tools"
+	"sportgether/utils"
 	"strings"
 	"time"
 )
@@ -87,7 +88,7 @@ type EventHistoryResponse struct {
 	EventType      string `json:"eventType"`
 }
 
-func (eventDao EventDao) CreateEvent(event *Event) error {
+func (eventDao EventDao) CreateEvent(event *Event, tx *sql.Tx) error {
 	query := `
 	INSERT INTO sportgether_schema.events (event_name, host_id, destination, long_lat, start_time, end_time, event_type, max_participant_count, description)
 	VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326), $6, $7, $8, $9, $10)
@@ -109,7 +110,7 @@ func (eventDao EventDao) CreateEvent(event *Event) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := eventDao.db.QueryRowContext(ctx, query, args...).Scan(&event.ID)
+	err := tx.QueryRowContext(ctx, query, args...).Scan(&event.ID)
 	if err != nil {
 		return err
 	}
@@ -442,7 +443,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 	return &eventDetail, nil
 }
 
-func (eventDao EventDao) JoinEvent(eventId int64, participantId int64) error {
+func (eventDao EventDao) JoinEvent(eventId int64, participantId int64, tx *sql.Tx) error {
 	query := `
 	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
 	VALUES ($1, $2)
@@ -455,9 +456,16 @@ func (eventDao EventDao) JoinEvent(eventId int64, participantId int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := eventDao.db.ExecContext(ctx, query, args...)
-	if err != nil {
-		return err
+	if tx != nil {
+		_, err := tx.ExecContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := eventDao.db.ExecContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -540,4 +548,188 @@ func (eventDao EventDao) GetHistory(userId int64, pageNumber int64, pageSize int
 	}
 
 	return &res, nil
+}
+
+func (eventDao EventDao) GetUserJoinedEventCount(userId int64) (int, error) {
+	query := `
+	SELECT count(*) from sportgether_schema.users u
+	         INNER JOIN sportgether_schema.event_participant ep on u.id = ep.participantid
+	WHERE u.id = $1
+`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count int
+	err := eventDao.db.QueryRowContext(ctx, query, userId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, err
+}
+
+func (eventDao EventDao) GetMutualJoinedEventCount(userId int64, participantId int64) (int, error) {
+	query := `
+	SELECT  count(*)
+	    from sportgether_schema.event_participant ep
+		INNER JOIN sportgether_schema.event_participant ep2 on ep.eventid = ep2.eventid
+	WHERE ep.participantid = $1 AND ep2.participantid = $2
+`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count int
+	err := eventDao.db.QueryRowContext(ctx, query, userId, participantId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, err
+}
+
+func (eventDao EventDao) InitialiseUserHostingConfig(userId int64) error {
+	query := `
+		INSERT INTO sportgether_schema.user_hosting_config (user_id)
+		VALUES ($1)
+		ON CONFLICT (user_id) DO NOTHING;
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := eventDao.db.ExecContext(ctx, query, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type UserHostingConfigInfo struct {
+	HostCount    int    `json:"hostCount"`
+	MaxHostCount int    `json:"maxHostCount"`
+	RefreshInMin int    `json:"refreshInMin"`
+	Status       string `json:"status"`
+}
+
+type HostingConfigurator struct {
+	MaxCount      int `json:"maxCount"`
+	RefreshPeriod int `json:"refreshPeriod"`
+}
+
+type UpdateHostingConfigInput struct {
+	userId                int64
+	needRefreshTime       bool
+	needUpdateHostCount   bool
+	currentUserConfigInfo UserHostingConfigInfo
+	configurator          HostingConfigurator
+}
+
+// Update and return result if needed, else just return result, as though calling get
+func (eventDao EventDao) UpdateUserHostingConfig(userId int64, updateAfterUserHosted bool, tx *sql.Tx) (*UserHostingConfigInfo, error) {
+	var configurator HostingConfigurator = HostingConfigurator{}
+	err := utils.ReadJsonFromFile("./data/hosting_config.json", &configurator)
+	if err != nil {
+		return nil, err
+	}
+
+	queryResult := struct {
+		hostCount         int
+		last_refresh_time time.Time
+	}{}
+	currentConfigQuery := `SELECT hc.host_count, hc.last_refresh_time FROM sportgether_schema.user_hosting_config hc WHERE hc.user_id = $1`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err = eventDao.db.QueryRowContext(ctx, currentConfigQuery, userId).Scan(&queryResult.hostCount, &queryResult.last_refresh_time)
+	if err != nil {
+		return nil, err
+	}
+
+	needRefresh := time.Since(queryResult.last_refresh_time) >= time.Duration(configurator.RefreshPeriod*int(time.Minute))
+
+	currentUserConfigInfo := UserHostingConfigInfo{
+		MaxHostCount: configurator.MaxCount,
+		HostCount:    queryResult.hostCount,
+	}
+	if needRefresh || updateAfterUserHosted {
+		input := UpdateHostingConfigInput{
+			userId:                userId,
+			needRefreshTime:       needRefresh,
+			needUpdateHostCount:   updateAfterUserHosted,
+			currentUserConfigInfo: currentUserConfigInfo,
+			configurator:          configurator,
+		}
+		userHostingConfig, err := eventDao.updateHostingConfig(input, tx)
+		if err != nil {
+			return nil, err
+		}
+		return userHostingConfig, nil
+	}
+
+	currentUserConfigInfo.RefreshInMin = int(queryResult.last_refresh_time.Add(time.Duration(configurator.RefreshPeriod * int(time.Minute))).Sub(time.Now()).Minutes())
+	currentUserConfigInfo.appendStatus(configurator)
+	return &currentUserConfigInfo, nil
+}
+
+func (eventDao EventDao) updateHostingConfig(input UpdateHostingConfigInput, tx *sql.Tx) (*UserHostingConfigInfo, error) {
+	values := []any{}
+	setQuery := "SET"
+
+	if input.needRefreshTime {
+		setQuery += fmt.Sprintf(" last_refresh_time=$%d, host_count=$%d", len(values)+1, len(values)+2)
+		values = append(values, time.Now(), 0)
+	}
+	if input.needUpdateHostCount {
+		if input.needRefreshTime {
+			values[len(values)-1] = 1
+		} else {
+			setQuery += fmt.Sprintf(" host_count=$%d", len(values)+1)
+			values = append(values, input.currentUserConfigInfo.HostCount+1)
+		}
+	}
+
+	updateQuery := fmt.Sprintf(`
+	UPDATE sportgether_schema.user_hosting_config
+	%s
+	WHERE user_id = $%d
+	RETURNING host_count, last_refresh_time
+`, setQuery, len(values)+1)
+	values = append(values, input.userId)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var res = UserHostingConfigInfo{
+		MaxHostCount: input.configurator.MaxCount,
+	}
+	var lastRefreshTime time.Time
+
+	if tx != nil {
+		err := tx.QueryRowContext(ctx, updateQuery, values...).Scan(&res.HostCount, &lastRefreshTime)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := eventDao.db.QueryRowContext(ctx, updateQuery, values...).Scan(&res.HostCount, &lastRefreshTime)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	res.RefreshInMin = int(lastRefreshTime.Add(time.Duration(input.configurator.RefreshPeriod * int(time.Minute))).Sub(time.Now()).Minutes())
+	res.appendStatus(input.configurator)
+
+	return &res, nil
+}
+
+func (config *UserHostingConfigInfo) appendStatus(configurator HostingConfigurator) {
+	status := ""
+	if config.HostCount >= configurator.MaxCount {
+		status = "INVALID"
+	} else {
+		status = "VALID"
+	}
+	config.Status = status
 }

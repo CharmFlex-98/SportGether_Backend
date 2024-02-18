@@ -6,31 +6,6 @@ import (
 	"sportgether/tools"
 )
 
-// User Profile
-
-//func (app *Application) updateProfileIcon(w http.ResponseWriter, r *http.Request) {
-//	input := struct {
-//		ProfileIconUrl string `json:"profileIconUrl"`
-//	}{}
-//	err := app.readRequest(r, &input)
-//	if err != nil {
-//		app.writeBadRequestResponse(w, r)
-//		return
-//	}
-//
-//	user, ok := app.GetUserContext(r)
-//	if !ok {
-//		app.writeInvalidAuthenticationErrorResponse(w, r)
-//		return
-//	}
-//
-//	err = app.daos.UserDao.UpdateProfileIconUrl(user.ID, input.ProfileIconUrl)
-//	if err != nil {
-//		app.logError(err, r)
-//		app.writeInternalServerErrorResponse(w, r)
-//	}
-//}
-
 func (app *Application) checkIfUserOnboarded(w http.ResponseWriter, r *http.Request) {
 	user, ok := app.GetUserContext(r)
 	if !ok {

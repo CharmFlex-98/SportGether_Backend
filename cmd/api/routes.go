@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *Application) routes() http.Handler {
@@ -45,6 +46,7 @@ func profileHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile", app.getUserProfileDetail)
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/other/:userId", app.getOtherUserProfileDetail)
 	httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile/update", app.updateUserProfile)
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/mutual-info/:userId", app.getMutualEventInfo)
 }
 
 func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
@@ -56,6 +58,8 @@ func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/event-history/all", app.getEventHistory)
 	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/quit/:eventId", app.quitEvent)
 	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/delete/:eventId", app.deleteEvent)
+	httpRouter.HandlerFunc(http.MethodPatch, "/v1/event/host/config/update", app.updateUserHostingConfigInfo)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/host/config-init/", app.initHostingConfig)
 }
 
 func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {

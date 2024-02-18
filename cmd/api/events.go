@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -102,13 +103,18 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create transaction
-	err = app.daos.WithTransaction(func() error {
-		err = app.daos.CreateEvent(event)
+	err = app.daos.WithTransaction(func(tx *sql.Tx) error {
+		err = app.daos.CreateEvent(event, tx)
 		if err != nil {
 			return err
 		}
 
-		err = app.daos.JoinEvent(event.ID, host.ID)
+		err = app.daos.JoinEvent(event.ID, host.ID, tx)
+		if err != nil {
+			return err
+		}
+
+		_, err = app.daos.UpdateUserHostingConfig(host.ID, true, tx)
 		if err != nil {
 			return err
 		}
@@ -164,7 +170,7 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		app.writeInvalidAuthenticationErrorResponse(w, r)
 	}
-	err = app.daos.JoinEvent(input.EventId, user.ID)
+	err = app.daos.JoinEvent(input.EventId, user.ID, nil)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
@@ -263,6 +269,83 @@ func (app *Application) getEventHistory(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = app.writeResponse(w, responseData{"history": res}, http.StatusOK, nil)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}
+
+func (app *Application) getMutualEventInfo(w http.ResponseWriter, r *http.Request) {
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	otherUserId, err := app.readParam("userId", r)
+	if err != nil {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	joinedEventCount, err := app.daos.GetUserJoinedEventCount(*otherUserId)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	mutualEventCount, err := app.daos.GetMutualJoinedEventCount(user.ID, *otherUserId)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	output := struct {
+		JoinedEventCount int `json:"joinedEventCount"`
+		MutualEventCount int `json:"mutualEventCount"`
+	}{
+		JoinedEventCount: joinedEventCount,
+		MutualEventCount: mutualEventCount,
+	}
+
+	err = app.writeResponse(w, responseData{"mutualEventInfo": output}, http.StatusOK, nil)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}
+
+func (app *Application) initHostingConfig(w http.ResponseWriter, r *http.Request) {
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	err := app.daos.InitialiseUserHostingConfig(user.ID)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}
+
+func (app *Application) updateUserHostingConfigInfo(w http.ResponseWriter, r *http.Request) {
+	user, ok := app.GetUserContext(r)
+	if !ok {
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
+	config, err := app.daos.UpdateUserHostingConfig(user.ID, false, nil)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.writeResponse(w, responseData{"hostingConfigInfo": config}, http.StatusOK, nil)
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)

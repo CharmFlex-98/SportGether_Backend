@@ -2,15 +2,16 @@ package main // "main" indicating this is main app, not library. Other files can
 import (
 	"context"
 	"database/sql"
-	firebase "firebase.google.com/go/v4"
 	"flag"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"google.golang.org/api/option"
 	"log"
 	"log/slog"
 	"os"
 	"sportgether/models"
 	"time"
+
+	firebase "firebase.google.com/go/v4"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"google.golang.org/api/option"
 )
 
 type sslCertConfig struct {

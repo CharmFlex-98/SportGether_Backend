@@ -30,7 +30,7 @@ func NewDaoHandler(database *sql.DB) Daos {
 	}
 }
 
-type Transaction func() error
+type Transaction func(tx *sql.Tx) error
 
 func (daos Daos) WithTransaction(transaction Transaction) error {
 	tx, err := daos.database.Begin()
@@ -39,7 +39,7 @@ func (daos Daos) WithTransaction(transaction Transaction) error {
 	}
 	defer tx.Rollback()
 
-	err = transaction()
+	err = transaction(tx)
 	if err != nil {
 		return err
 	}
