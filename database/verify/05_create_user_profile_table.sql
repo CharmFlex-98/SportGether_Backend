@@ -9,6 +9,7 @@ SELECT user_id,
        join_date,
        status,
        profile_icon_url,
+       profile_icon_public_id,
        signature,
        memo,
        version

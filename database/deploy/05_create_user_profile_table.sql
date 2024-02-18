@@ -11,6 +11,7 @@ CREATE table if not exists sportgether_schema.user_profile
     join_date        date                  NOT NULL DEFAULT now(),
     status           text                  NOT NULL DEFAULT 'NOT_ONBOARDED',
     profile_icon_url text,
+    profile_icon_public_id text,
     signature        text,
     memo             text,
     version          int                   NOT NULL DEFAULT 1

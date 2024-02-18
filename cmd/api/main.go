@@ -10,6 +10,7 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go/v4"
+	"github.com/cloudinary/cloudinary-go/v2"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"google.golang.org/api/option"
 )
@@ -45,15 +46,17 @@ func (c config) getCertConfig() sslCertConfig {
 }
 
 type Application struct {
-	config      config
-	logger      *slog.Logger
-	daos        models.Daos
-	firebaseApp *firebase.App
+	config        config
+	logger        *slog.Logger
+	daos          models.Daos
+	firebaseApp   *firebase.App
+	cloudinaryApp *cloudinary.Cloudinary
 }
 
 func main() {
 	config := config{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	cld := credentials()
 
 	flag.IntVar(&config.port, "port", 3000, "Port for listening")
 	config.env = os.Getenv("ENV")
@@ -76,13 +79,20 @@ func main() {
 	}
 
 	app := Application{
-		config:      config,
-		logger:      logger,
-		daos:        models.NewDaoHandler(db),
-		firebaseApp: firebaseApp,
+		config:        config,
+		logger:        logger,
+		daos:          models.NewDaoHandler(db),
+		firebaseApp:   firebaseApp,
+		cloudinaryApp: cld,
 	}
 
 	app.serve()
+}
+
+func credentials() *cloudinary.Cloudinary {
+	cld, _ := cloudinary.New()
+	cld.Config.URL.Secure = true
+	return cld
 }
 
 func (cfg config) openDatabase() (*sql.DB, error) {

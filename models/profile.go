@@ -13,13 +13,14 @@ type UserProfileDao struct {
 }
 
 type UserProfileDetail struct {
-	PreferredName  *string   `json:"preferredName"`
-	BirthDate      *string   `json:"birthDate"`
-	Signature      *string   `json:"signature"`
-	Memo           *string   `json:"memo"`
-	JoinTime       time.Time `json:"joinTime"`
-	ProfileIconUrl *string   `json:"profileIconUrl"`
-	Gender         *string   `json:"gender"`
+	PreferredName       *string   `json:"preferredName"`
+	BirthDate           *string   `json:"birthDate"`
+	Signature           *string   `json:"signature"`
+	Memo                *string   `json:"memo"`
+	JoinTime            time.Time `json:"joinTime"`
+	ProfileIconUrl      *string   `json:"profileIconUrl"`
+	ProfileIconPublicId *string   `json:"profileIconPublicId"`
+	Gender              *string   `json:"gender"`
 }
 
 func (profileDao UserProfileDao) UserIsOnboarded(userId int64) (bool, error) {
@@ -104,14 +105,31 @@ func (profileDao UserProfileDao) OnboardUser(userId int64, preferredName string,
 	return false, nil
 }
 
+func (profileDao UserProfileDao) GetUserProfileIconUrl(userId int64) (*string, *string, error) {
+	query := `
+		SELECT profile_icon_url, profile_icon_public_id from sportgether_schema.user_profile WHERE user_id=$1
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var profileIconUrl *string
+	var profileIconPublicId *string
+	err := profileDao.db.QueryRowContext(ctx, query, userId).Scan(&profileIconUrl, &profileIconPublicId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return profileIconUrl, profileIconPublicId, nil
+}
+
 func (profileDao UserProfileDao) UpdateUserProfile(userId int64, detail UserProfileDetail) error {
 	columnsMap := map[string]any{
-		"preferred_name":   detail.PreferredName,
-		"birth_date":       detail.BirthDate,
-		"signature":        detail.Signature,
-		"gender":           detail.Gender,
-		"profile_icon_url": detail.ProfileIconUrl,
-		"memo":             detail.Memo,
+		"preferred_name":         detail.PreferredName,
+		"birth_date":             detail.BirthDate,
+		"signature":              detail.Signature,
+		"gender":                 detail.Gender,
+		"profile_icon_url":       detail.ProfileIconUrl,
+		"profile_icon_public_id": detail.ProfileIconPublicId,
+		"memo":                   detail.Memo,
 	}
 	setQuery, values := buildColumnsToUpdate(columnsMap)
 	whereClause := fmt.Sprintf("WHERE up.user_id = $%d", len(values)+1)

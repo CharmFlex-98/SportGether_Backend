@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"sportgether/models"
 	"sportgether/tools"
+	"time"
+
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
 func (app *Application) checkIfUserOnboarded(w http.ResponseWriter, r *http.Request) {
@@ -69,12 +74,13 @@ func (app *Application) onboardUser(w http.ResponseWriter, r *http.Request) {
 
 func (app *Application) updateUserProfile(w http.ResponseWriter, r *http.Request) {
 	input := &struct {
-		PreferredName  *string `json:"preferredName"`
-		BirthDate      *string `json:"birthDate"`
-		Signature      *string `json:"signature"`
-		Memo           *string `json:"memo"`
-		ProfileIconUrl *string `json:"profileIconUrl"`
-		Gender         *string `json:"gender"`
+		PreferredName       *string `json:"preferredName"`
+		BirthDate           *string `json:"birthDate"`
+		Signature           *string `json:"signature"`
+		Memo                *string `json:"memo"`
+		ProfileIconUrl      *string `json:"profileIconUrl"`
+		ProfileIconPublicId *string `json:"profileIconPublicId"`
+		Gender              *string `json:"gender"`
 	}{}
 	err := app.readRequest(r, input)
 	if err != nil {
@@ -83,12 +89,13 @@ func (app *Application) updateUserProfile(w http.ResponseWriter, r *http.Request
 	}
 
 	userProfileDetail := models.UserProfileDetail{
-		PreferredName:  input.PreferredName,
-		BirthDate:      input.BirthDate,
-		Signature:      input.Signature,
-		Memo:           input.Memo,
-		ProfileIconUrl: input.ProfileIconUrl,
-		Gender:         input.Gender,
+		PreferredName:       input.PreferredName,
+		BirthDate:           input.BirthDate,
+		Signature:           input.Signature,
+		Memo:                input.Memo,
+		ProfileIconUrl:      input.ProfileIconUrl,
+		ProfileIconPublicId: input.ProfileIconPublicId,
+		Gender:              input.Gender,
 	}
 
 	user, ok := app.GetUserContext(r)
@@ -96,6 +103,36 @@ func (app *Application) updateUserProfile(w http.ResponseWriter, r *http.Request
 		app.writeInvalidAuthenticationErrorResponse(w, r)
 		return
 	}
+
+	// This is to delete old profile icon url after performing and update.
+	// This is fail safe. If fails, no need to do anything.
+	if userProfileDetail.ProfileIconUrl != nil && userProfileDetail.ProfileIconPublicId != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		userProfileIconUrl, publicId, err := app.daos.GetUserProfileIconUrl(user.ID)
+		if err != nil {
+			app.logError(err, r)
+			app.writeInternalServerErrorResponse(w, r)
+			return
+		}
+
+		// Delete only if existed.
+		if userProfileIconUrl != nil && publicId != nil {
+			res, err := app.cloudinaryApp.Upload.Destroy(ctx, uploader.DestroyParams{PublicID: *publicId})
+			if err != nil {
+				app.logError(err, r)
+				app.writeInternalServerErrorResponse(w, r)
+				return
+			}
+			if res.Result != "ok" {
+				app.logError(errors.New(res.Error.Message), r)
+				app.writeInternalServerErrorResponse(w, r)
+				return
+			}
+		}
+	}
+
 	err = app.daos.UpdateUserProfile(user.ID, userProfileDetail)
 	if err != nil {
 		app.logError(err, r)
