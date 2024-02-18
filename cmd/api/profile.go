@@ -104,6 +104,12 @@ func (app *Application) updateUserProfile(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// If nothing needed to update, return
+	if input.PreferredName == nil && input.BirthDate == nil && input.Signature == nil && input.Memo == nil && input.ProfileIconPublicId == nil && input.ProfileIconUrl == nil && input.Gender == nil {
+		app.logWarning("User userId = %d no need to update profile since nothing is changed", user.ID)
+		return
+	}
+
 	// This is to delete old profile icon url after performing and update.
 	// This is fail safe. If fails, no need to do anything.
 	if userProfileDetail.ProfileIconUrl != nil && userProfileDetail.ProfileIconPublicId != nil {
