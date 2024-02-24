@@ -555,14 +555,14 @@ func (eventDao EventDao) GetUserJoinedEventCount(userId int64) (int, error) {
 	SELECT count(*) from sportgether_schema.users u
 	         INNER JOIN sportgether_schema.event_participant ep on u.id = ep.participantid
 			 INNER JOIN sportgether_schema.events e on ep.eventid = e.id
-	WHERE u.id = $1 AND e.deleted IS FALSE
+	WHERE u.id = $1 AND u.end_time < $2 AND e.deleted IS FALSE
 `
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	var count int
-	err := eventDao.db.QueryRowContext(ctx, query, userId).Scan(&count)
+	err := eventDao.db.QueryRowContext(ctx, query, userId, time.Now()).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
