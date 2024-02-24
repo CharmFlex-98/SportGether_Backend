@@ -323,7 +323,7 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
   			e.deleted
   		from sportgether_schema.event_participant ep 
   		inner join sportgether_schema.events e on ep.eventId = e.id
-  		WHERE e.start_time > $1 AND ep.participantId = $2
+  		WHERE e.end_time > $1 AND ep.participantId = $2
 `
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
