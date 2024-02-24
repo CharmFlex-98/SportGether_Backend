@@ -554,7 +554,7 @@ func (eventDao EventDao) GetUserJoinedEventCount(userId int64) (int, error) {
 	query := `
 	SELECT count(*) from sportgether_schema.users u
 	         INNER JOIN sportgether_schema.event_participant ep on u.id = ep.participantid
-			 INNER JOIN sportgether_schema.event e on ep.eventid = e.id
+			 INNER JOIN sportgether_schema.events e on ep.eventid = e.id
 	WHERE u.id = $1 AND e.deleted IS FALSE
 `
 
@@ -575,7 +575,7 @@ func (eventDao EventDao) GetMutualJoinedEventCount(userId int64, participantId i
 	SELECT  count(*)
 	    from sportgether_schema.event_participant ep
 		INNER JOIN sportgether_schema.event_participant ep2 on ep.eventid = ep2.eventid
-		INNER JOIN sportgether_schema.event e on ep.eventid = e.id
+		INNER JOIN sportgether_schema.events e on ep.eventid = e.id
 	WHERE ep.participantid = $1 AND ep2.participantid = $2 AND e.deleted IS FALSE
 `
 
