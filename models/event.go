@@ -246,7 +246,6 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 
 		eventDetail.HostId = eventDetail.EventHostDetail.ParticipantId
 		eventDetail.IsHost = eventDetail.HostId == user.ID
-		appendEventStatus(eventDetail)
 
 		if _, ok := eventsMap[eventDetail.Event.ID]; !ok {
 			eventsMap[eventDetail.Event.ID] = eventDetail
@@ -258,6 +257,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 				ParticipantUsername: *participant.name,
 				ProfileIconUrl:      participant.profileIconUrl,
 			})
+			appendEventStatus(eventsMap[eventDetail.Event.ID])
 		}
 		if participant.id != nil && *participant.id == user.ID {
 			eventsMap[eventDetail.Event.ID].IsJoined = true
