@@ -332,7 +332,7 @@ func (EventDao EventDao) GetUserEvents(userId int64) (*UserScheduledEventsRespon
   		from sportgether_schema.event_participant ep 
   		inner join sportgether_schema.events e on ep.eventId = e.id
   		WHERE e.end_time > $1 AND ep.participantId = $2
-		ORDER BY e.start_time
+		ORDER BY e.start_time DESC
 `
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
