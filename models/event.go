@@ -58,8 +58,9 @@ type EventDetail struct {
 type EventStatus string
 
 var (
-	full      = EventStatus("FULL")
-	available = EventStatus("AVAILABLE")
+	full           = EventStatus("FULL")
+	available      = EventStatus("AVAILABLE")
+	eventCancelled = EventStatus("CANCEL")
 )
 
 type UserScheduledEventsResponse struct {
@@ -380,7 +381,8 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 		    event.end_time, 
 		    event.event_type, 
 		    event.max_participant_count, 
-		    event.description
+		    event.description, 
+			event.deleted
 		
 		FROM event
 		INNER JOIN sportgether_schema.users u on event.host_id = u.id
@@ -389,6 +391,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	var cancelled bool
 	err := eventDao.db.QueryRowContext(ctx, query, eventId).Scan(
 		&eventDetail.ID,
 		&eventDetail.EventName,
@@ -401,12 +404,16 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 		&eventDetail.EventType,
 		&eventDetail.MaxParticipantCount,
 		&eventDetail.Description,
+		&cancelled,
 	)
 	if err != nil {
 		return nil, err
 	}
 	eventDetail.HostId = eventDetail.EventHostDetail.ParticipantId
 	eventDetail.IsHost = eventDetail.HostId == userId
+	if cancelled {
+		eventDetail.Status = eventCancelled
+	}
 
 	query = `
 	SELECT 
