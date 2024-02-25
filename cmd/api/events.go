@@ -171,16 +171,19 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 		app.writeInvalidAuthenticationErrorResponse(w, r)
 	}
 
+	// Get event detail
+	eventDetail, err := app.daos.GetEventById(input.EventId, user.ID)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInvalidAuthenticationErrorResponse(w, r)
+		return
+	}
+
 	// Create transaction
 	err = app.daos.WithTransaction(func(tx *sql.Tx) error {
-		// Get event detail
-		eventDetail, err := app.daos.GetEventById(input.EventId, user.ID)
-		if err != nil {
-			return err
-		}
 
 		// Try join event
-		err = app.daos.JoinEvent(input.EventId, user.ID, nil)
+		err = app.daos.JoinEvent(input.EventId, user.ID, tx)
 		if err != nil {
 			return err
 		}
