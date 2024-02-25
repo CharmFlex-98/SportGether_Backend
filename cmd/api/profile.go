@@ -75,7 +75,7 @@ func (app *Application) onboardUser(w http.ResponseWriter, r *http.Request) {
 func (app *Application) updateUserProfile(w http.ResponseWriter, r *http.Request) {
 	input := &struct {
 		PreferredName       *string `json:"preferredName"`
-		BirthDate           *string `json:"birthDate"`
+		BirthDate           *string `json:"dateOfBirth"`
 		Signature           *string `json:"signature"`
 		Memo                *string `json:"memo"`
 		ProfileIconUrl      *string `json:"profileIconUrl"`
