@@ -109,7 +109,7 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		err = app.daos.JoinEvent(event.ID, host.ID, tx)
+		err = app.daos.JoinEvent(event.ID, event.MaxParticipantCount, host.ID, tx)
 		if err != nil {
 			return err
 		}
@@ -183,21 +183,9 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 	err = app.daos.WithTransaction(func(tx *sql.Tx) error {
 
 		// Try join event
-		err = app.daos.JoinEvent(input.EventId, user.ID, tx)
+		err = app.daos.JoinEvent(input.EventId, eventDetail.MaxParticipantCount, user.ID, tx)
 		if err != nil {
 			return err
-		}
-
-		// Get event participant count
-		currentParticipantCount, err := app.daos.CheckEventParticipantCount(input.EventId, tx)
-		fmt.Printf("current event part: %d", currentParticipantCount)
-		if err != nil {
-			return err
-		}
-
-		// If exceed, revert join event
-		if currentParticipantCount > eventDetail.MaxParticipantCount {
-			return constants.StaleInfoError
 		}
 
 		return nil

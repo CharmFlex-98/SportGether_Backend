@@ -460,14 +460,17 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 }
 
 // This will execute in Transaction, always
-func (eventDao EventDao) JoinEvent(eventId int64, participantId int64, tx *sql.Tx) error {
+func (eventDao EventDao) JoinEvent(eventId int64, maxParticipantCount int, participantId int64, tx *sql.Tx) error {
 	query := `
 	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
-	VALUES ($1, $2)
+	SELECT $1, $2 
+	FROM sportgether_schema.event_participant 
+	WHERE eventid = $1 GROUP BY eventid HAVING count(participantid) <= $3
 `
 	args := []any{
 		eventId,
 		participantId,
+		maxParticipantCount,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
