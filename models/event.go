@@ -465,7 +465,7 @@ func (eventDao EventDao) JoinEvent(eventId int64, maxParticipantCount int, parti
 	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
 	SELECT $1, $2 
 	FROM sportgether_schema.event_participant 
-	WHERE eventid = $1 GROUP BY eventid HAVING count(participantid) <= $3
+	WHERE eventid = $1 GROUP BY eventid HAVING count(participantid) < $3
 `
 	args := []any{
 		eventId,
