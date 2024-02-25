@@ -51,7 +51,7 @@ func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferred
 		Data: map[string]string{
 			"type":     "event",
 			"eventId":  fmt.Sprintf("%d", eventId),
-			"title":    "New participant!",
+			"title":    "Welcome your partner!",
 			"subtitle": fmt.Sprintf("%s has joined the event!", userPreferredName),
 		},
 		Tokens: *tokens,
@@ -92,7 +92,7 @@ func (app *Application) broadcastEventDeletedMessage(eventId int64, userId int64
 			"type":     "event",
 			"eventId":  fmt.Sprintf("%d", eventId),
 			"title":    "Event cancelled",
-			"subtitle": fmt.Sprintf("The host had deleted the event: %s", event.EventName),
+			"subtitle": fmt.Sprintf("The host had cancelled the event: %s", event.EventName),
 		},
 		Tokens: *tokens,
 	}

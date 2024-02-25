@@ -38,9 +38,10 @@ type Event struct {
 }
 
 type EventParticipantDetail struct {
-	ParticipantId       int64   `json:"userId"`
-	ParticipantUsername string  `json:"username"`
-	ProfileIconUrl      *string `json:"profileIconUrl"`
+	ParticipantId            int64   `json:"userId"`
+	ParticipantUsername      string  `json:"username"`
+	ParticipantPreferredName string  `json:"participantPreferredName"`
+	ProfileIconUrl           *string `json:"profileIconUrl"`
 }
 
 type EventHostDetail EventParticipantDetail
@@ -177,7 +178,8 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    event.id, 
 	    event_name, 
 	    host_id,
-	    u.username as host_name, 
+	    u.username as host_name,
+		up.preferred_name as host_preferred_name
 	    up.profile_icon_url as host_profile_icon_url, 
 	    destination, 
 		%s as distance, 
@@ -188,6 +190,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    description, 
 	    ep.participantid as participant_id, 
 	    u1.username as participant_name,
+		pup.preferred_name as participant_preferred_name,
 	    pup.profile_icon_url as participant_profile_icon_url from event
 	    INNER JOIN sportgether_schema.users u ON host_id = u.id
 		LEFT JOIN sportgether_schema.user_profile up ON host_id = up.user_id
@@ -221,6 +224,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 		participant := struct {
 			id             *int64
 			name           *string
+			preferredName  *string
 			profileIconUrl *string
 		}{}
 
@@ -229,6 +233,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			&eventDetail.Event.EventName,
 			&eventDetail.EventHostDetail.ParticipantId,
 			&eventDetail.EventHostDetail.ParticipantUsername,
+			&eventDetail.EventHostDetail.ParticipantPreferredName,
 			&eventDetail.EventHostDetail.ProfileIconUrl,
 			&eventDetail.Destination,
 			&eventDetail.Distance,
@@ -239,6 +244,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 			&eventDetail.Description,
 			&participant.id,
 			&participant.name,
+			&participant.preferredName,
 			&participant.profileIconUrl,
 		)
 		if err != nil {
@@ -254,9 +260,10 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 
 		if participant.id != nil && participant.name != nil {
 			eventsMap[eventDetail.Event.ID].Participants = append(eventsMap[eventDetail.Event.ID].Participants, EventParticipantDetail{
-				ParticipantId:       *participant.id,
-				ParticipantUsername: *participant.name,
-				ProfileIconUrl:      participant.profileIconUrl,
+				ParticipantId:            *participant.id,
+				ParticipantUsername:      *participant.name,
+				ParticipantPreferredName: *participant.preferredName,
+				ProfileIconUrl:           participant.profileIconUrl,
 			})
 			appendEventStatus(eventsMap[eventDetail.Event.ID])
 		}
@@ -438,6 +445,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 		err := row.Scan(
 			&participant.ParticipantId,
 			&participant.ParticipantUsername,
+			&participant.ParticipantPreferredName,
 			&participant.ProfileIconUrl,
 		)
 		if err != nil {
