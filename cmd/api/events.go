@@ -190,7 +190,7 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 
 		// Get event participant count
 		currentParticipantCount, err := app.daos.CheckEventParticipantCount(input.EventId)
-		fmt.Sprintf("current event part: %d", currentParticipantCount)
+		fmt.Printf("current event part: %d", currentParticipantCount)
 		if err != nil {
 			return err
 		}
