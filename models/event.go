@@ -459,6 +459,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 	return &eventDetail, nil
 }
 
+// This will execute in Transaction, always
 func (eventDao EventDao) JoinEvent(eventId int64, participantId int64, tx *sql.Tx) error {
 	query := `
 	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
@@ -472,19 +473,29 @@ func (eventDao EventDao) JoinEvent(eventId int64, participantId int64, tx *sql.T
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	if tx != nil {
-		_, err := tx.ExecContext(ctx, query, args...)
-		if err != nil {
-			return err
-		}
-	} else {
-		_, err := eventDao.db.ExecContext(ctx, query, args...)
-		if err != nil {
-			return err
-		}
+	_, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func (eventDao EventDao) CheckEventParticipantCount(eventId int64) (int, error) {
+	query := `
+		SELECT COUNT(*) FROM sportgether_schema.event_participant ep where ep.eventId = $1
+	`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var count int
+	err := eventDao.db.QueryRowContext(ctx, query, eventId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+
 }
 
 func (eventDao EventDao) QuitEvent(eventId int64, userId int64) error {

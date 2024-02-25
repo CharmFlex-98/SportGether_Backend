@@ -1,7 +1,9 @@
 package models
 
 import (
+	"context"
 	"database/sql"
+	"time"
 )
 
 type Daos struct {
@@ -33,7 +35,10 @@ func NewDaoHandler(database *sql.DB) Daos {
 type Transaction func(tx *sql.Tx) error
 
 func (daos Daos) WithTransaction(transaction Transaction) error {
-	tx, err := daos.database.Begin()
+	context, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := daos.database.BeginTx(context, nil)
 	if err != nil {
 		return nil
 	}

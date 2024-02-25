@@ -152,7 +152,7 @@ func (profileDao UserProfileDao) UpdateUserProfile(userId int64, detail UserProf
 }
 
 func buildColumnsToUpdate(columnNames map[string]any) (string, []any) {
-	setColumn := "SET "
+	setColumn := "SET version = version + 1, "
 	var values []any
 
 	count := 0

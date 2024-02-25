@@ -170,10 +170,45 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		app.writeInvalidAuthenticationErrorResponse(w, r)
 	}
-	err = app.daos.JoinEvent(input.EventId, user.ID, nil)
+
+	// Create transaction
+	err = app.daos.WithTransaction(func(tx *sql.Tx) error {
+		// Get event detail
+		eventDetail, err := app.daos.GetEventById(input.EventId, user.ID)
+		if err != nil {
+			return err
+		}
+
+		// Try join event
+		err = app.daos.JoinEvent(input.EventId, user.ID, nil)
+		if err != nil {
+			return err
+		}
+
+		// Get event participant count
+		currentParticipantCount, err := app.daos.CheckEventParticipantCount(input.EventId)
+		if err != nil {
+			return err
+		}
+
+		// If exceed, revert join event
+		if currentParticipantCount > eventDetail.MaxParticipantCount {
+			return constants.StaleInfoError
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		app.logError(err, r)
-		app.writeInternalServerErrorResponse(w, r)
+		switch {
+		case errors.Is(err, constants.StaleInfoError):
+			app.logError(errors.New("stale info error, race condition happenned, done reverting"), r)
+			app.writeError(w, r, http.StatusConflict, constants.StaleInfoError.Code, "The event is staled. Please refresh")
+
+		default:
+			app.logError(err, r)
+			app.writeInternalServerErrorResponse(w, r)
+		}
 	}
 
 	detail, err := app.daos.GetProfileDetail(user.ID)
