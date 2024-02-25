@@ -180,6 +180,7 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.logError(err, r)
 		// Fail silently, so we don't want to affect the client.
+		return
 	}
 	err = app.broadCastEventJoinedMessage(input.EventId, *detail.PreferredName)
 	if err != nil {
@@ -242,7 +243,7 @@ func (app *Application) deleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.broadcastEventDeletedMessage(*value)
+	err = app.broadcastEventDeletedMessage(*value, user.ID)
 	if err != nil {
 		app.logError(err, r)
 		// Fail silently

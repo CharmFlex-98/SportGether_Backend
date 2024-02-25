@@ -49,7 +49,9 @@ func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferred
 	// This registration tokens come from the client FCM SDKs.
 	message := &messaging.MulticastMessage{
 		Data: map[string]string{
-			"title":    "Event joined",
+			"type":     "event",
+			"eventId":  fmt.Sprintf("%d", eventId),
+			"title":    "New participant!",
 			"subtitle": fmt.Sprintf("%s has joined the event!", userPreferredName),
 		},
 		Tokens: *tokens,
@@ -64,7 +66,13 @@ func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferred
 	return nil
 }
 
-func (app *Application) broadcastEventDeletedMessage(eventId int64) error {
+func (app *Application) broadcastEventDeletedMessage(eventId int64, userId int64) error {
+	// Get event detail
+	event, err := app.daos.GetEventById(eventId, userId)
+	if err != nil {
+		return err
+	}
+
 	// Obtain a messaging.Client from the App.
 	tokens, err := app.daos.GetEventParticipantTokens(eventId)
 	if err != nil {
@@ -81,8 +89,10 @@ func (app *Application) broadcastEventDeletedMessage(eventId int64) error {
 	// This registration tokens come from the client FCM SDKs.
 	message := &messaging.MulticastMessage{
 		Data: map[string]string{
-			"title":    "Event deleted",
-			"subtitle": "The host had deleted the event",
+			"type":     "event",
+			"eventId":  fmt.Sprintf("%d", eventId),
+			"title":    "Event cancelled",
+			"subtitle": fmt.Sprintf("The host had deleted the event: %s", event.EventName),
 		},
 		Tokens: *tokens,
 	}
