@@ -426,6 +426,7 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 	SELECT 
 	    u.id, 
 	    u.username, 
+		up.preferred_name, 
 	    up.profile_icon_url
 	FROM sportgether_schema.event_participant ep 
 	inner join sportgether_schema.users u on u.id = ep.participantid
