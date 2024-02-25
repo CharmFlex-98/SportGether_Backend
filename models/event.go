@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"sportgether/constants"
 	"sportgether/remote_config"
 	"sportgether/tools"
 	"sportgether/utils"
@@ -477,12 +478,16 @@ func (eventDao EventDao) JoinEvent(eventId int64, maxParticipantCount int, parti
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := tx.ExecContext(ctx, query, args...)
+	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if _, err := res.LastInsertId(); err != nil {
+		return constants.StaleInfoError
+	} else {
+		return nil
+	}
 }
 
 func (eventDao EventDao) CheckEventParticipantCount(eventId int64, tx *sql.Tx) (int, error) {
