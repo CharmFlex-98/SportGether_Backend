@@ -481,7 +481,7 @@ func (eventDao EventDao) JoinEvent(eventId int64, participantId int64, tx *sql.T
 	return nil
 }
 
-func (eventDao EventDao) CheckEventParticipantCount(eventId int64) (int, error) {
+func (eventDao EventDao) CheckEventParticipantCount(eventId int64, tx *sql.Tx) (int, error) {
 	query := `
 		SELECT COUNT(*) FROM sportgether_schema.event_participant ep where ep.eventId = $1
 	`
@@ -489,7 +489,7 @@ func (eventDao EventDao) CheckEventParticipantCount(eventId int64) (int, error) 
 	defer cancel()
 
 	var count int
-	err := eventDao.db.QueryRowContext(ctx, query, eventId).Scan(&count)
+	err := tx.QueryRowContext(ctx, query, eventId).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
