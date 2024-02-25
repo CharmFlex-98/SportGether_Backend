@@ -40,7 +40,7 @@ type Event struct {
 type EventParticipantDetail struct {
 	ParticipantId            int64   `json:"userId"`
 	ParticipantUsername      string  `json:"username"`
-	ParticipantPreferredName string  `json:"participantPreferredName"`
+	ParticipantPreferredName string  `json:"userPreferredName"`
 	ProfileIconUrl           *string `json:"profileIconUrl"`
 }
 
