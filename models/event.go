@@ -473,6 +473,7 @@ func (eventDao EventDao) JoinEvent(eventId int64, maxParticipantCount int, parti
 		maxParticipantCount,
 	}
 
+	fmt.Printf("eventId: %d, maxParticipantCount: %d, participantId: %d", eventId, maxParticipantCount, participantId)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
