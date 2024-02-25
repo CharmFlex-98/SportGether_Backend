@@ -179,7 +179,7 @@ func (eventDao EventDao) GetEvents(filter tools.Filter, user *User) (*EventDetai
 	    event_name, 
 	    host_id,
 	    u.username as host_name,
-		up.preferred_name as host_preferred_name
+		up.preferred_name as host_preferred_name,
 	    up.profile_icon_url as host_profile_icon_url, 
 	    destination, 
 		%s as distance, 
