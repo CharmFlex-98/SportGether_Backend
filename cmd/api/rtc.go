@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
-	"firebase.google.com/go/v4/messaging"
+	"fmt"
 	"net/http"
+
+	"firebase.google.com/go/v4/messaging"
 )
 
 func (app *Application) registerFirebaseToken(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +31,37 @@ func (app *Application) registerFirebaseToken(w http.ResponseWriter, r *http.Req
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 	}
+}
+
+func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferredName string) error {
+	tokens, err := app.daos.GetEventParticipantTokens(eventId)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	client, err := app.firebaseApp.Messaging(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create a list containing up to 500 registration tokens.
+	// This registration tokens come from the client FCM SDKs.
+	message := &messaging.MulticastMessage{
+		Data: map[string]string{
+			"title":    "Event joined",
+			"subtitle": fmt.Sprintf("%s has joined the event!", userPreferredName),
+		},
+		Tokens: *tokens,
+	}
+
+	num, err := client.SendEachForMulticast(context.Background(), message)
+	if err != nil {
+		return err
+	}
+	app.logInfo("success count: %d, failure count: %d, response: %s", num.SuccessCount, num.FailureCount, num.Responses)
+
+	return nil
 }
 
 func (app *Application) broadcastEventDeletedMessage(eventId int64) error {

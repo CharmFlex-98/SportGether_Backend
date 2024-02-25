@@ -175,6 +175,16 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
 	}
+
+	detail, err := app.daos.GetProfileDetail(user.ID)
+	if err != nil {
+		app.logError(err, r)
+		// Fail silently, so we don't want to affect the client.
+	}
+	err = app.broadCastEventJoinedMessage(input.EventId, *detail.PreferredName)
+	if err != nil {
+		app.logError(err, r)
+	}
 }
 
 func (app *Application) quitEvent(w http.ResponseWriter, r *http.Request) {
@@ -235,7 +245,7 @@ func (app *Application) deleteEvent(w http.ResponseWriter, r *http.Request) {
 	err = app.broadcastEventDeletedMessage(*value)
 	if err != nil {
 		app.logError(err, r)
-		app.writeInternalServerErrorResponse(w, r)
+		// Fail silently
 	}
 }
 
