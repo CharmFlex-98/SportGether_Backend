@@ -460,8 +460,27 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 	return &eventDetail, nil
 }
 
+func (eventDao EventDao) JoinEventByOwner(eventId int64, ownerId int64, tx *sql.Tx) error {
+	query := `
+	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
+	VALUES ($1, $2)
+`
+	args := []any{
+		eventId,
+		ownerId,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // This will execute in Transaction, always
-func (eventDao EventDao) JoinEvent(eventId int64, maxParticipantCount int, participantId int64, tx *sql.Tx) error {
+func (eventDao EventDao) JoinEventByParticipant(eventId int64, maxParticipantCount int, participantId int64) error {
 	query := `
 	INSERT INTO sportgether_schema.event_participant (eventid, participantid)
 	SELECT $1, $2 
@@ -478,16 +497,27 @@ func (eventDao EventDao) JoinEvent(eventId int64, maxParticipantCount int, parti
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	res, err := tx.ExecContext(ctx, query, args...)
+	// var eventIdOutput int64
+	// var participantIdOutput int64
+	res, err := eventDao.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
 
-	if _, err := res.LastInsertId(); err != nil {
+	if row_count, err := res.RowsAffected(); err != nil {
+		return err
+	} else if row_count == 0 {
 		return constants.StaleInfoError
-	} else {
-		return nil
 	}
+
+	return nil
+
+	// if eventIdOutput != eventId || participantId != participantIdOutput {
+	// 	return constants.StaleInfoError
+	// } else {
+	// 	return nil
+
+	// }
 }
 
 func (eventDao EventDao) CheckEventParticipantCount(eventId int64, tx *sql.Tx) (int, error) {

@@ -109,7 +109,7 @@ func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		err = app.daos.JoinEvent(event.ID, event.MaxParticipantCount, host.ID, tx)
+		err = app.daos.JoinEventByOwner(event.ID, host.ID, tx)
 		if err != nil {
 			return err
 		}
@@ -171,6 +171,7 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 		app.writeInvalidAuthenticationErrorResponse(w, r)
 	}
 
+	// TODO Try to merge this 2 separate queries to one
 	// Get event detail
 	eventDetail, err := app.daos.GetEventById(input.EventId, user.ID)
 	if err != nil {
@@ -179,18 +180,8 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create transaction
-	err = app.daos.WithTransaction(func(tx *sql.Tx) error {
-
-		// Try join event
-		err = app.daos.JoinEvent(input.EventId, eventDetail.MaxParticipantCount, user.ID, tx)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+	// Try join event
+	err = app.daos.JoinEventByParticipant(input.EventId, eventDetail.MaxParticipantCount, user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, constants.StaleInfoError):
