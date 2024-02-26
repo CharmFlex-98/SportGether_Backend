@@ -90,7 +90,7 @@ func (app *Application) recoverPanic(next http.Handler) http.Handler {
 				// fmt.Errorf() to normalize it into an error and call our
 				// serverErrorResponse() helper. In turn, this will log the error using // our custom Logger type at the ERROR level and send the client a 500 // Internal Server Error response.
 				app.logError(fmt.Errorf("There is panic triggered by error --> %s", err), r)
-				app.
+				app.writeInternalServerErrorResponse(w, r)
 			}
 		}()
 		next.ServeHTTP(w, r)
