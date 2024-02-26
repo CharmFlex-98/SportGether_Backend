@@ -192,6 +192,7 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 			app.logError(err, r)
 			app.writeInternalServerErrorResponse(w, r)
 		}
+		return
 	}
 
 	detail, err := app.daos.GetProfileDetail(user.ID)
