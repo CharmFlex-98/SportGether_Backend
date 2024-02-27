@@ -86,7 +86,11 @@ func main() {
 		cloudinaryApp: cld,
 	}
 
-	app.serve()
+	err = app.serve()
+	if err != nil {
+		app.logInfo("error: %s, stopping server...", err)
+		os.Exit(1)
+	}
 }
 
 func credentials() *cloudinary.Cloudinary {
