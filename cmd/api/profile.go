@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"sportgether/models"
+	"sportgether/internal/models"
 	"sportgether/tools"
 	"time"
 

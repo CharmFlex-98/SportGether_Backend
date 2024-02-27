@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"sportgether/constants"
-	"sportgether/models"
+	"sportgether/internal/models"
 	"sportgether/tools"
 )
 
@@ -58,6 +58,14 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	go func() {
+		err = app.mailer.Send(user.Email, "welcome_user.tmpl", user)
+		if err != nil {
+			// Just log error. We don't want to return error to client
+			app.logError(err, r)
+		}
+	}()
 
 	err = app.writeResponse(w, nil, http.StatusAccepted, nil)
 	if err != nil {

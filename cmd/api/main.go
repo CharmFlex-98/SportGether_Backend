@@ -6,8 +6,10 @@ import (
 	"log"
 	"log/slog"
 	"os"
-	"sportgether/models"
+	"sportgether/internal/models"
 	"time"
+
+	"sportgether/internal/mailer"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/cloudinary/cloudinary-go/v2"
@@ -28,6 +30,13 @@ type config struct {
 		maxOpenConnection int
 		maxIdleConnection int
 		maxIdleTime       time.Duration
+	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
 	}
 }
 
@@ -51,6 +60,7 @@ type Application struct {
 	daos          models.Daos
 	firebaseApp   *firebase.App
 	cloudinaryApp *cloudinary.Cloudinary
+	mailer        mailer.Mailer
 }
 
 func main() {
@@ -78,12 +88,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	initSmtpConfig(&config)
+
 	app := Application{
 		config:        config,
 		logger:        logger,
 		daos:          models.NewDaoHandler(db),
 		firebaseApp:   firebaseApp,
 		cloudinaryApp: cld,
+		mailer:        mailer.New(config.smtp.host, config.smtp.port, config.smtp.username, config.smtp.password, config.smtp.sender),
 	}
 
 	err = app.serve()
@@ -91,6 +104,14 @@ func main() {
 		app.logInfo("error: %s, stopping server...", err)
 		os.Exit(1)
 	}
+}
+
+func initSmtpConfig(c *config) {
+	c.smtp.host = "sandbox.smtp.mailtrap.io"
+	c.smtp.port = 2525
+	c.smtp.username = "b8d056c5257cb6"
+	c.smtp.password = "7788619e1f7e46"
+	c.smtp.sender = "CharmFlex Studio <charmflex1111@gmail.com>"
 }
 
 func credentials() *cloudinary.Cloudinary {

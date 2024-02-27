@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
-	"sportgether/models"
+	"sportgether/internal/models"
 )
 
 type contextKey string

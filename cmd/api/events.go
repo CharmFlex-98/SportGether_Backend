@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sportgether/constants"
-	"sportgether/models"
+	"sportgether/internal/models"
 	"sportgether/tools"
 )
 
