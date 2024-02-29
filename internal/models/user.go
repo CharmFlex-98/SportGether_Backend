@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"sportgether/constants"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserDao struct {
@@ -36,9 +37,6 @@ type User struct {
 	Status    string    `json:"-"`
 	CreatedAt time.Time `json:"-"`
 	Version   int32     `json:"-"`
-}
-
-type UserStatus struct {
 }
 
 func (dao UserDao) Insert(user *User) error {
