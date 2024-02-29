@@ -42,31 +42,31 @@ func userHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 }
 
 func profileHandlerFunc(app *Application, httpRouter *httprouter.Router) {
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/onboard-status", app.checkIfUserOnboarded)
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/profile/setup", app.onboardUser)
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile", app.getUserProfileDetail)
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/other/:userId", app.getOtherUserProfileDetail)
-	httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile/update", app.updateUserProfile)
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/mutual-info/:userId", app.getMutualEventInfo)
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/onboard-status", app.requiredAuthenticatedUser(app.checkIfUserOnboarded))
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/profile/setup", app.requiredAuthenticatedUser(app.onboardUser))
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile", app.requiredAuthenticatedUser(app.getUserProfileDetail))
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/other/:userId", app.requiredAuthenticatedUser(app.getOtherUserProfileDetail))
+	httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile/update", app.requiredAuthenticatedUser(app.updateUserProfile))
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/user/profile/mutual-info/:userId", app.requiredAuthenticatedUser(app.getMutualEventInfo))
 }
 
 func eventHandlerFunc(app *Application, httpRouter *httprouter.Router) {
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/all", app.getAllEvents)
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/event", app.getUserEvents)
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/event/:eventId", app.getEventById)
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/create", app.createEvent)
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/join", app.joinEvent)
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/event-history/all", app.getEventHistory)
-	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/quit/:eventId", app.quitEvent)
-	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/delete/:eventId", app.deleteEvent)
-	httpRouter.HandlerFunc(http.MethodPatch, "/v1/event/host/config/update", app.updateUserHostingConfigInfo)
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/host/config-init/", app.initHostingConfig)
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/all", app.requiredAuthenticatedUser(app.getAllEvents))
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/event", app.requiredAuthenticatedUser(app.getUserEvents))
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/event/:eventId", app.requiredAuthenticatedUser(app.getEventById))
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/create", app.requiredAuthenticatedUser(app.createEvent))
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/join", app.requiredAuthenticatedUser(app.joinEvent))
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/event-history/all", app.requiredAuthenticatedUser(app.getEventHistory))
+	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/quit/:eventId", app.requiredAuthenticatedUser(app.quitEvent))
+	httpRouter.HandlerFunc(http.MethodDelete, "/v1/event/delete/:eventId", app.requiredAuthenticatedUser(app.deleteEvent))
+	httpRouter.HandlerFunc(http.MethodPatch, "/v1/event/host/config/update", app.requiredAuthenticatedUser(app.updateUserHostingConfigInfo))
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/event/host/config-init/", app.requiredAuthenticatedUser(app.initHostingConfig))
 }
 
 func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/sports/all", app.getSportDetails)
-	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/main", app.getMainMessage)
-	httpRouter.HandlerFunc(http.MethodPost, "/v1/message-centre/register", app.registerFirebaseToken)
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/sports/all", app.requiredAuthenticatedUser(app.getSportDetails))
+	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/main", app.requiredAuthenticatedUser(app.getMainMessage))
+	httpRouter.HandlerFunc(http.MethodPost, "/v1/message-centre/register", app.requiredAuthenticatedUser(app.registerFirebaseToken))
 }
 
 func websiteHandlerFunc(app *Application, httpRouter *httprouter.Router) {

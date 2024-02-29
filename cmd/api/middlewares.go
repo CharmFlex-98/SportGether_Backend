@@ -76,6 +76,23 @@ func (app *Application) authenticationHandler(nextHandler http.Handler) http.Han
 	})
 }
 
+func (app *Application) requiredAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := app.GetUserContext(r)
+		if !ok {
+			app.writeInternalServerErrorResponse(w, r)
+			return
+		}
+
+		if user == models.UnauthenticatedUser {
+			app.writeInvalidAuthenticationErrorResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (app *Application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Create a deferred function (which will always be run in the event of a panic // as Go unwinds the stack).
