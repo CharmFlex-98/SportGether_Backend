@@ -38,7 +38,6 @@ func (app *Application) notFound(w http.ResponseWriter, r *http.Request) {
 func userHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/register", app.registerUser)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/user/login", app.loginUser)
-	//httpRouter.HandlerFunc(http.MethodPatch, "/v1/user/profile-icon", app.updateProfileIcon)
 }
 
 func profileHandlerFunc(app *Application, httpRouter *httprouter.Router) {
@@ -70,5 +69,5 @@ func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 }
 
 func websiteHandlerFunc(app *Application, httpRouter *httprouter.Router) {
-	httpRouter.ServeFiles("/Sport-Gether", http.Dir("./data/static_website.html"))
+	httpRouter.ServeFiles("/static_website.html", http.Dir("./data"))
 }
