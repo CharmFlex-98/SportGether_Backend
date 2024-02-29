@@ -13,6 +13,7 @@ func (app *Application) routes() http.Handler {
 	httpRouter.NotFound = http.HandlerFunc(app.notFound)
 	httpRouter.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowed)
 
+	websiteHandlerFunc(app, httpRouter)
 	userHandlerFunc(app, httpRouter)
 	eventHandlerFunc(app, httpRouter)
 	profileHandlerFunc(app, httpRouter)
@@ -66,4 +67,8 @@ func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/sports/all", app.getSportDetails)
 	httpRouter.HandlerFunc(http.MethodGet, "/v1/message-centre/main", app.getMainMessage)
 	httpRouter.HandlerFunc(http.MethodPost, "/v1/message-centre/register", app.registerFirebaseToken)
+}
+
+func websiteHandlerFunc(app *Application, httpRouter *httprouter.Router) {
+	httpRouter.ServeFiles("/Sport-Gether", http.Dir("./data/static_website.html"))
 }

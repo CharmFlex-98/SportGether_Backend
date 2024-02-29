@@ -32,11 +32,11 @@ type config struct {
 		maxIdleTime       time.Duration
 	}
 	smtp struct {
-		host     string
-		port     int
-		username string
-		password string
-		sender   string
+		Host     string `json:"host"`
+		Port     int    `json:"port"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Sender   string `json:"sender"`
 	}
 }
 
@@ -96,7 +96,7 @@ func main() {
 		daos:          models.NewDaoHandler(db),
 		firebaseApp:   firebaseApp,
 		cloudinaryApp: cld,
-		mailer:        mailer.New(config.smtp.host, config.smtp.port, config.smtp.username, config.smtp.password, config.smtp.sender),
+		mailer:        mailer.New(config.smtp.Host, config.smtp.Port, config.smtp.Username, config.smtp.Password, config.smtp.Sender),
 	}
 
 	err = app.serve()
@@ -107,11 +107,13 @@ func main() {
 }
 
 func initSmtpConfig(c *config) {
-	c.smtp.host = "sandbox.smtp.mailtrap.io"
-	c.smtp.port = 2525
-	c.smtp.username = "b8d056c5257cb6"
-	c.smtp.password = "7788619e1f7e46"
-	c.smtp.sender = "CharmFlex Studio <charmflex1111@gmail.com>"
+	var path string
+	if c.isProd() {
+		path = "./data/smtp_config_prod"
+	} else {
+		path = "./data/smtp_config_dev"
+	}
+	readJsonFromFile(path, &c.smtp)
 }
 
 func credentials() *cloudinary.Cloudinary {
@@ -139,4 +141,8 @@ func (cfg config) openDatabase() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func (c config) isProd() bool {
+	return c.env == "PRD"
 }
