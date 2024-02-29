@@ -69,5 +69,5 @@ func messageCentreHandlerFunc(app *Application, httpRouter *httprouter.Router) {
 }
 
 func websiteHandlerFunc(app *Application, httpRouter *httprouter.Router) {
-	httpRouter.ServeFiles("/data/*filepath", http.Dir(""))
+	httpRouter.ServeFiles("/static/*filepath", http.Dir(""))
 }
