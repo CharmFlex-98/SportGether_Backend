@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -130,4 +132,22 @@ func readJsonFromFile(filePath string, item interface{}) error {
 	}
 
 	return nil
+}
+
+func (app *Application) background(fn func(), r *http.Request) {
+	// increment before start
+	app.wg.Add(1)
+	go func() {
+		// Decrement before end
+		defer app.wg.Done()
+
+		defer func() {
+			if err := recover(); err != nil {
+				app.logError(errors.New(fmt.Sprintf("%s", err)), r)
+			}
+		}()
+
+		// Execute background goroutine
+		fn()
+	}()
 }

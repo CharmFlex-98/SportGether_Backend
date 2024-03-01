@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"sportgether/internal/models"
+	"sync"
 	"time"
 
 	"sportgether/internal/mailer"
@@ -61,6 +62,7 @@ type Application struct {
 	firebaseApp   *firebase.App
 	cloudinaryApp *cloudinary.Cloudinary
 	mailer        mailer.Mailer
+	wg            sync.WaitGroup
 }
 
 func main() {

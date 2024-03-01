@@ -59,13 +59,13 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
+	app.background(func() {
 		err = app.mailer.Send(user.Email, "welcome_user.tmpl", user)
 		if err != nil {
 			// Just log error. We don't want to return error to client
 			app.logError(err, r)
 		}
-	}()
+	}, r)
 
 	err = app.writeResponse(w, nil, http.StatusAccepted, nil)
 	if err != nil {

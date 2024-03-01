@@ -32,7 +32,15 @@ func (app *Application) serve() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		shutdownError <- server.Shutdown(ctx)
+		err := server.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		app.logInfo("completing background task...")
+
+		app.wg.Wait()
+		shutdownError <- nil
 	}()
 
 	app.logInfo(fmt.Sprintf("Starting server in env=%s", app.config.env))
