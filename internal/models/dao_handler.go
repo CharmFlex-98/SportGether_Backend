@@ -12,6 +12,7 @@ type Daos struct {
 	EventDao
 	UserProfileDao
 	MessagingDao
+	TokenDao
 }
 
 func NewDaoHandler(database *sql.DB) Daos {
@@ -27,6 +28,9 @@ func NewDaoHandler(database *sql.DB) Daos {
 			db: database,
 		},
 		MessagingDao{
+			db: database,
+		},
+		TokenDao{
 			db: database,
 		},
 	}
