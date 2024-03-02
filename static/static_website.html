@@ -3,91 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete Account</title>
+    <title>SportGether Account Deregistration</title>
     <style>
+        #verificationCodeContainer {
+            display: none;
+            padding: 10px; /* Add padding around the container */
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
         }
         .container {
             max-width: 400px;
             margin: 50px auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
         }
-        .form-group {
+        h1 {
+            text-align: center;
             margin-bottom: 20px;
+            color: #333333;
         }
-        .form-group label {
-            display: block;
+        label {
             font-weight: bold;
-            margin-bottom: 5px;
+            display: block;
+            margin-bottom: 8px;
+            color: #555555;
         }
-        .form-group input {
-            width: 100%;
+        input[type="text"], input[type="password"] {
+            width: calc(100% - 20px);
             padding: 10px;
-            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            border: 1px solid #cccccc;
             border-radius: 5px;
+            box-sizing: border-box;
         }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
+        button[type="button"] {
+            width: 100%;
+            padding: 12px;
             background-color: #007bff;
-            color: #fff;
+            color: #ffffff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        .btn:hover {
+        button[type="button"]:hover {
             background-color: #0056b3;
+        }
+        .note {
+            font-size: 14px;
+            color: #888888;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            text-align: left;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Delete Account</h2>
-        <form id="deleteForm">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn">Delete Account</button>
+        <h1>SportGether Account Deregistration</h1>
+        <form id="deregistrationForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required autocomplete="on">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="button" id="button">Send Verification Email</button>
+        </form>
+    </div>
+
+    <div class="container" id="verificationCodeContainer", display: none;>
+        <h1>Submit Code Here</h1>
+        <form id="codeForm">
+            <label for="deactivationCode">Code:</label>
+            <input type="password" id="deactivationCode" name="Deactivation Code" required>
+            <p6 id="wrongCodeText", style="display: none;">Incorrect deactivation code</p6>
+            <p6 id="doneDeregistrationText", style="display: none;">You have done deregistration. You can close this now.</p6>
+            <button type="button" id="deactivationButton">Submit Code</button>
+            <div class="error-message" id="errorMessage">You can refresh the page to restart again if you didn't receive any code. An email will be sent to you only if you enter your credentials correctly</div>
         </form>
     </div>
 
     <script>
-        document.getElementById('deleteForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent form submission
-            
-            // You can implement your account deletion logic here
-            var username = document.getElementById('username').value;
-            var password = document.getElementById('password').value;
-            
-            // For demonstration purposes, let's log the username and password to console
-            console.log("Username:", username);
-            console.log("Password:", password);
-            
-            // You can make an AJAX request to your server to delete the account
-            // Example:
-            // var xhr = new XMLHttpRequest();
-            // xhr.open('POST', 'your-server-endpoint-url', true);
-            // xhr.setRequestHeader('Content-Type', 'application/json');
-            // xhr.onload = function() {
-            //     if (xhr.status === 200) {
-            //         alert('Account deleted successfully!');
-            //     } else {
-            //         alert('Failed to delete account. Please try again later.');
-            //     }
-            // };
-            // xhr.send(JSON.stringify({ username: username, password: password }));
-            
-            // For the sake of demonstration, alert a message
-            alert('Account deletion functionality is not implemented in this mockup.');
+        // Function to handle form submission
+        document.getElementById("button").addEventListener("click", function() {
+            var xhr = new XMLHttpRequest();
+            const username = document.getElementById("username").value;
+            const pw = document.getElementById("password").value;
+            const data = {
+                username: username, 
+                password: pw
+            }
+
+            xhr.open("PUT", "/v1/user/deregister-request", true); // Change the URL to your Go backend endpoint
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function() {
+                console.log(xhr.status)
+                if (xhr.status === 200) {
+                    document.getElementById("verificationCodeContainer").style.display = "block"
+                }
+            };
+            xhr.send(JSON.stringify(data))
+        });
+
+        // Function to handle form submission
+        document.getElementById("deactivationButton").addEventListener("click", function() {
+            var xhr = new XMLHttpRequest();
+            const code = document.getElementById("deactivationCode").value;
+
+            xhr.open("DELETE", "/v1/user/deregister?code="+code, true); // Change the URL to your Go backend endpoint
+            xhr.onreadystatechange = function() {
+                console.log(xhr.status)
+                if (xhr.status === 200) {
+                    document.getElementById("doneDeregistrationText").style.display = "block"
+                    document.getElementById("wrongCodeText").style.display = "none"
+                } else {
+                    document.getElementById("wrongCodeText").style.display = "block"
+                    document.getElementById("doneDeregistrationText").style.display = "none"
+                }
+            };
+            xhr.send()
         });
     </script>
 </body>

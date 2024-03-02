@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -25,8 +26,12 @@ var (
 	UnauthenticatedUser = &User{}
 )
 
-func unauthenticatedUser(user *User) bool {
+func (user *User) UnauthenticatedUser() bool {
 	return user == UnauthenticatedUser
+}
+
+func (user *User) ActivatedUser() bool {
+	return user.Status == "ACTIVATED"
 }
 
 type User struct {
@@ -145,6 +150,86 @@ func (dao UserDao) GetById(userId int64) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func (dao UserDao) UpdateUser(user User) error {
+	query := `
+        UPDATE sportgether_schema.users 
+        SET username = $1, password = $2, email = $3, status = $4, version = version + 1
+        WHERE id = $5 AND version = $6
+        RETURNING version`
+
+	args := []any{
+		user.UserName,
+		user.Password.passwordHashed,
+		user.Email,
+		user.Status,
+		user.ID,
+		user.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := dao.db.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dao UserDao) GetUserByToken(tokenScope string, code string) (*User, error) {
+	tokenHash := sha256.Sum256([]byte(code))
+	fmt.Printf("PLAINTEXT: %s, hash: %s", code, tokenHash)
+
+	query := `
+        SELECT u.id, u.username, u.password, u.email, u.status, u.createD_at, u.version from sportgether_schema.users u
+        INNER JOIN sportgether_schema.tokens t
+        ON u.id = t.user_id
+        WHERE t.hash = $1
+        AND t.scope = $2 
+        AND t.expiry > $3`
+
+	args := []any{tokenHash[:], tokenScope, time.Now()}
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := dao.db.QueryRowContext(ctx, query, args...).Scan(
+		&user.ID,
+		&user.UserName,
+		&user.Password.passwordHashed,
+		&user.Email,
+		&user.Status,
+		&user.CreatedAt,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, err
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (userDao UserDao) DeleteUser(userId int64) error {
+	query := "DELETE FROM sportgether_schema.users u WHERE u.id = $1"
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := userDao.db.ExecContext(ctx, query, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //	func (dao UserDao) UpdateProfileIconUrl(userId int64, url string) error {

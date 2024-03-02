@@ -93,6 +93,25 @@ func (app *Application) requiredAuthenticatedUser(next http.HandlerFunc) http.Ha
 	})
 }
 
+func (app *Application) requiredActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := app.GetUserContext(r)
+		if !ok {
+			app.writeInternalServerErrorResponse(w, r)
+			return
+		}
+
+		if !user.ActivatedUser() {
+			app.writeResponse(w, nil, http.StatusUnauthorized, map[string]string{"x-sg-req": "ACTIVATION"})
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
+	return app.requiredAuthenticatedUser(fn)
+}
+
 func (app *Application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Create a deferred function (which will always be run in the event of a panic // as Go unwinds the stack).

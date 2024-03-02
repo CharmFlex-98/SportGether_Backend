@@ -31,18 +31,13 @@ type responseHeader map[string]string
 
 // Json response
 func (app *Application) writeResponse(w http.ResponseWriter, content any, code int, headers responseHeader) error {
-	if content == nil {
-		w.WriteHeader(code)
-		return nil
-	}
-
 	res, err := json.MarshalIndent(content, "", "\t")
 	if err != nil {
 		return err
 	}
 
 	for key, value := range headers {
-		w.Header().Set(value, headers[key])
+		w.Header().Set(key, value)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -88,14 +83,14 @@ func (app *Application) readParam(paramName string, r *http.Request) (*int64, er
 	return &value, nil
 }
 
-func (app *Application) readString(args url.Values, key string, defaultValue string) string {
+func (app *Application) readString(args url.Values, key string, defaultValue string) (string, error) {
 	val := args.Get(key)
 
 	if val == "" {
-		return defaultValue
+		return defaultValue, nil
 	}
 
-	return val
+	return val, nil
 }
 
 func (app *Application) readInt(args url.Values, key string, defaultValue int64) (int64, error) {

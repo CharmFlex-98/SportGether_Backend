@@ -1,0 +1,38 @@
+{{define "subject"}}SportGether Account Deactivation{{end}}
+
+{{define "plainBody"}} 
+Hi {{.userId}},
+
+We are sorry that you are leaving. I hope we have been serving you our best all the while.
+Please deactivate your account by pasting the code below in the prompt window.
+
+Your de-activation code: {{.deactivationCode}}
+
+
+Thanks,
+CharmFlex Studio
+{{end}}
+
+{{define "htmlBody"}} 
+<!doctype html> 
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+
+<body> 
+    <p>Hi {{.userId}}</p>
+    <p>We are sorry that you are leaving. I hope we have been serving you our best all the while.</p>
+    <p>Please deactivate your account by pasting the code below in the prompt window.</p>
+    <p>Your de-activation code: {{.deactivationCode}}</p>
+
+
+    <p>Thanks,</p>
+    <p>CharmFlex Studio</p>
+</body>
+
+</html> 
+{{end}}

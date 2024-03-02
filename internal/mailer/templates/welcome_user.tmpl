@@ -1,14 +1,17 @@
 {{define "subject"}}Welcome to Greenlight!{{end}}
 
 {{define "plainBody"}} 
-Hi {{.UserName}},
+Hi {{.userId}},
 
 Thanks for joining as one of the member of SportGether. We're excited to have you onboard!
+Please validate your account by pasting the below code in the prompt window from the application.
+
+Your activation code: {{.activationCode}}
 
 
 
 Thanks,
-The Greenlight Team
+CharmFlex Studio
 {{end}}
 
 {{define "htmlBody"}} 
@@ -22,10 +25,15 @@ The Greenlight Team
 
 
 <body> 
-    <p>Hi {{.UserName}}</p>
-    <p>Thanks for signing up for a Greenlight account. We're excited to have you onboard!</p>
+    <p>Hi {{.userId}}</p>
+    <p>Thanks for joining as one of the member of SportGether. We're excited to have you onboard!</p>
+    <p>Please validate your account by pasting the below code in the prompt window from the application.</p>
+    <p>P Your activation code: {{.activationCode}}</p>
+
+    Your activation code: {{.activationCode}}
+
     <p>Thanks,</p>
-    <p>The Greenlight Team</p>
+    <p>CharmFlex Studio</p>
 </body>
 
 </html> 

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS sportgether_schema.users(
     username text NOT NULL UNIQUE,
     password text NOT NULL,
     email text NOT NULL UNIQUE,
-    status text NOT NULL DEFAULT 'ACTIVE',
+    status text NOT NULL DEFAULT 'NOT_ACTIVATED',
     created_at timestamp(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
     version int NOT NULL DEFAULT 1
 );

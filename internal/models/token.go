@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	activationScope = "activation"
+	AccountActivationScope    = "activation"
+	AcccountDeactivationScope = "deactivation"
 )
 
 type Token struct {
@@ -79,23 +80,23 @@ func (m TokenDao) New(userID int64, ttl time.Duration, scope string) (*Token, er
 // Insert() adds the data for a specific token to the tokens table.
 func (tokenDao TokenDao) Insert(token *Token) error {
 	query := `
-	INSERT INTO tokens (hash, user_id, expiry, scope) VALUES ($1, $2, $3, $4)`
+	INSERT INTO sportgether_schema.tokens (hash, user_id, expiry, scope) VALUES ($1, $2, $3, $4)`
 
 	args := []any{token.Hash, token.UserId, token.Expiry, token.Scope}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := tokenDao.DB.ExecContext(ctx, query, args...)
+	_, err := tokenDao.db.ExecContext(ctx, query, args...)
 	return err
 }
 
 // DeleteAllForUser() deletes all tokens for a specific user and scope.
 func (m TokenDao) DeleteAllForUser(scope string, userID int64) error {
-	query := `DELETE FROM tokens WHERE scope = $1 AND user_id = $2`
+	query := `DELETE FROM sportgether_schema.tokens WHERE scope = $1 AND user_id = $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := m.DB.ExecContext(ctx, query, scope, userID)
+	_, err := m.db.ExecContext(ctx, query, scope, userID)
 	return err
 }

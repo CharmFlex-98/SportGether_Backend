@@ -18,3 +18,7 @@ func (app *Application) writeInvalidAuthenticationErrorResponse(w http.ResponseW
 	message := "Missing token or invalid token"
 	app.writeError(w, r, http.StatusUnauthorized, http.StatusUnauthorized, message)
 }
+
+func (app *Application) writeUserActivationRequiredResponse(w http.ResponseWriter, r *http.Request) error {
+	return app.writeResponse(w, nil, http.StatusUnauthorized, responseHeader{"x-sg-auth-req": "ACTIVATION"})
+}
