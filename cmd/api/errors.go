@@ -22,3 +22,7 @@ func (app *Application) writeInvalidAuthenticationErrorResponse(w http.ResponseW
 func (app *Application) writeUserActivationRequiredResponse(w http.ResponseWriter, r *http.Request) error {
 	return app.writeResponse(w, nil, http.StatusUnauthorized, responseHeader{"x-sg-auth-req": "ACTIVATION"})
 }
+
+func (app *Application) writeForceUpdateResponse(w http.ResponseWriter, r *http.Request) error {
+	return app.writeResponse(w, nil, http.StatusBadRequest, responseHeader{"x-sg-auth-forbidden": "APP_NOT_SUPPORTED"})
+}

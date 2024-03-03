@@ -19,7 +19,7 @@ func (app *Application) routes() http.Handler {
 	profileHandlerFunc(app, httpRouter)
 	messageCentreHandlerFunc(app, httpRouter)
 
-	return app.recoverPanic(app.authenticationHandler(httpRouter))
+	return app.recoverPanic(app.requiredMinAppVersion(app.authenticationHandler(httpRouter)))
 	//return httpRouter
 }
 

@@ -2,10 +2,11 @@ package tools
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
 	"slices"
 	"strconv"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var (
@@ -17,11 +18,12 @@ const (
 	AUTHENTICATION_SCOPE = "Authentication scope"
 )
 
-func GenerateJwtToken(userId int64, expiryInHour int, scope string) (string, error) {
+func GenerateJwtToken(userId int64, username string, expiryInHour int, scope string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
 	claims["sub"] = strconv.FormatInt(userId, 10)
+	claims["usrnm"] = username
 	claims["iat"] = jwt.NewNumericDate(time.Now())
 	claims["nbf"] = jwt.NewNumericDate(time.Now())
 	claims["iss"] = "http://charmflex-98.net"

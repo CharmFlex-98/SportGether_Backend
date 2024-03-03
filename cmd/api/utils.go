@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -145,4 +146,31 @@ func (app *Application) background(fn func(), r *http.Request) {
 		// Execute background goroutine
 		fn()
 	}()
+}
+
+func isValidVersion(currentVersion string, targetVersion string) (bool, error) {
+	curr := strings.Split(currentVersion, ".")
+	target := strings.Split(targetVersion, ".")
+
+	if len(curr) != len(target) {
+		return false, nil
+	}
+
+	for index, val := range curr {
+		currVal, err := strconv.Atoi(val)
+		if err != nil {
+			return false, nil
+		}
+
+		targetVal, err := strconv.Atoi(target[index])
+		if err != nil {
+			return false, nil
+		}
+
+		if currVal < targetVal {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

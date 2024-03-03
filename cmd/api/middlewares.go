@@ -12,6 +12,35 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+func (app *Application) requiredMinAppVersion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		appVersionHeader := r.Header.Get("Curr-Version")
+		input := struct {
+			MinVersion string `json:"minVersion"`
+		}{}
+		err := readJsonFromFile("./data/supported_min_version.json", &input)
+		if err != nil {
+			app.logError(err, r)
+			app.writeInternalServerErrorResponse(w, r)
+			return
+		}
+
+		isValid, err := isValidVersion(appVersionHeader, input.MinVersion)
+		if err != nil {
+			app.logError(err, r)
+			app.writeBadRequestResponse(w, r)
+			return
+		}
+
+		if !isValid {
+			app.writeForceUpdateResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (app *Application) authenticationHandler(nextHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorizationHeader := r.Header.Get("Authorization")
