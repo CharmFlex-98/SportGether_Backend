@@ -15,6 +15,12 @@ import (
 func (app *Application) requiredMinAppVersion(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		appVersionHeader := r.Header.Get("Curr-Version")
+		if appVersionHeader == "" {
+			// Let's skip for now. Only cater when client send the version.
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		input := struct {
 			MinVersion string `json:"minVersion"`
 		}{}
