@@ -107,7 +107,7 @@ func (app *Application) updateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.broadCastEventUpdatedMessage(event.ID)
+	err = app.broadCastEventUpdatedMessage(r, event.ID)
 	if err != nil {
 		app.logError(err, r)
 	}
@@ -249,7 +249,7 @@ func (app *Application) joinEvent(w http.ResponseWriter, r *http.Request) {
 		// Fail silently, so we don't want to affect the client.
 		return
 	}
-	err = app.broadCastEventJoinedMessage(input.EventId, *detail.PreferredName)
+	err = app.broadCastEventJoinedMessage(r, input.EventId, *detail.PreferredName)
 	if err != nil {
 		app.logError(err, r)
 	}
@@ -310,7 +310,7 @@ func (app *Application) deleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.broadcastEventDeletedMessage(*value, user.ID)
+	err = app.broadcastEventDeletedMessage(r, *value, user.ID)
 	if err != nil {
 		app.logError(err, r)
 		// Fail silently

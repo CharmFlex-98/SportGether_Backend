@@ -33,14 +33,8 @@ func (app *Application) registerFirebaseToken(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (app *Application) broadCastEventUpdatedMessage(eventId int64) error {
+func (app *Application) broadCastEventUpdatedMessage(r *http.Request, eventId int64) error {
 	tokens, err := app.daos.GetEventParticipantTokens(eventId)
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-	client, err := app.firebaseApp.Messaging(ctx)
 	if err != nil {
 		return err
 	}
@@ -57,23 +51,13 @@ func (app *Application) broadCastEventUpdatedMessage(eventId int64) error {
 		Tokens: *tokens,
 	}
 
-	num, err := client.SendEachForMulticast(context.Background(), message)
-	if err != nil {
-		return err
-	}
-	app.logInfo("success count: %d, failure count: %d, response: %s", num.SuccessCount, num.FailureCount, num.Responses)
+	app.fcmSend(r, context.Background(), message)
 
 	return nil
 }
 
-func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferredName string) error {
+func (app *Application) broadCastEventJoinedMessage(r *http.Request, eventId int64, userPreferredName string) error {
 	tokens, err := app.daos.GetEventParticipantTokens(eventId)
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-	client, err := app.firebaseApp.Messaging(ctx)
 	if err != nil {
 		return err
 	}
@@ -90,16 +74,12 @@ func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferred
 		Tokens: *tokens,
 	}
 
-	num, err := client.SendEachForMulticast(context.Background(), message)
-	if err != nil {
-		return err
-	}
-	app.logInfo("success count: %d, failure count: %d, response: %s", num.SuccessCount, num.FailureCount, num.Responses)
+	app.fcmSend(r, context.Background(), message)
 
 	return nil
 }
 
-func (app *Application) broadcastEventDeletedMessage(eventId int64, userId int64) error {
+func (app *Application) broadcastEventDeletedMessage(r *http.Request, eventId int64, userId int64) error {
 	// Get event detail
 	event, err := app.daos.GetEventById(eventId, userId)
 	if err != nil {
@@ -108,12 +88,6 @@ func (app *Application) broadcastEventDeletedMessage(eventId int64, userId int64
 
 	// Obtain a messaging.Client from the App.
 	tokens, err := app.daos.GetEventParticipantTokens(eventId)
-	if err != nil {
-		return err
-	}
-
-	ctx := context.Background()
-	client, err := app.firebaseApp.Messaging(ctx)
 	if err != nil {
 		return err
 	}
@@ -130,11 +104,23 @@ func (app *Application) broadcastEventDeletedMessage(eventId int64, userId int64
 		Tokens: *tokens,
 	}
 
-	num, err := client.SendEachForMulticast(context.Background(), message)
-	if err != nil {
-		return err
-	}
-	app.logInfo("success count: %d, failure count: %d, response: %s", num.SuccessCount, num.FailureCount, num.Responses)
+	app.fcmSend(r, context.Background(), message)
 
 	return nil
+}
+
+func (app *Application) fcmSend(r *http.Request, context context.Context, message *messaging.MulticastMessage) {
+	app.background(func() {
+		client, err := app.firebaseApp.Messaging(context)
+		if err != nil {
+			app.logError(err, r)
+			return
+		}
+
+		num, err := client.SendEachForMulticast(context, message)
+		if err != nil {
+			app.logError(err, r)
+		}
+		app.logInfo("success count: %d, failure count: %d, response: %s", num.SuccessCount, num.FailureCount, num.Responses)
+	}, r)
 }
