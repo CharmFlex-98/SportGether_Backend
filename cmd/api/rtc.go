@@ -33,6 +33,39 @@ func (app *Application) registerFirebaseToken(w http.ResponseWriter, r *http.Req
 	}
 }
 
+func (app *Application) broadCastEventUpdatedMessage(eventId int64) error {
+	tokens, err := app.daos.GetEventParticipantTokens(eventId)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	client, err := app.firebaseApp.Messaging(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create a list containing up to 500 registration tokens.
+	// This registration tokens come from the client FCM SDKs.
+	message := &messaging.MulticastMessage{
+		Data: map[string]string{
+			"type":     "event",
+			"eventId":  fmt.Sprintf("%d", eventId),
+			"title":    "The event you participated had been updated",
+			"subtitle": "Click here to view the updated details",
+		},
+		Tokens: *tokens,
+	}
+
+	num, err := client.SendEachForMulticast(context.Background(), message)
+	if err != nil {
+		return err
+	}
+	app.logInfo("success count: %d, failure count: %d, response: %s", num.SuccessCount, num.FailureCount, num.Responses)
+
+	return nil
+}
+
 func (app *Application) broadCastEventJoinedMessage(eventId int64, userPreferredName string) error {
 	tokens, err := app.daos.GetEventParticipantTokens(eventId)
 	if err != nil {

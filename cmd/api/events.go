@@ -104,6 +104,12 @@ func (app *Application) updateEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.logError(err, r)
 		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+
+	err = app.broadCastEventUpdatedMessage(event.ID)
+	if err != nil {
+		app.logError(err, r)
 	}
 }
 
