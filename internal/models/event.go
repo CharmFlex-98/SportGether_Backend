@@ -91,6 +91,33 @@ type EventHistoryResponse struct {
 	EventType      string `json:"eventType"`
 }
 
+func (eventDao EventDao) UpdateEvent(event *Event) error {
+	query := `
+	UPDATE sportgether_schema.events
+	SET start_time = $1, end_time = $2, description = $3
+	WHERE id = $4 AND host_id = $5
+	`
+
+	args := []any{
+		event.StartTime,
+		event.EndTime,
+		event.Description,
+		event.ID,
+		event.HostId,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := eventDao.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 func (eventDao EventDao) CreateEvent(event *Event, tx *sql.Tx) error {
 	query := `
 	INSERT INTO sportgether_schema.events (event_name, host_id, destination, long_lat, start_time, end_time, event_type, max_participant_count, description)

@@ -74,10 +74,6 @@ func (app *Application) registerUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err != nil {
-		app.logError(err, r)
-		app.writeInternalServerErrorResponse(w, r)
-	}
 }
 
 // Login user

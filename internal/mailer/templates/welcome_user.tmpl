@@ -1,4 +1,4 @@
-{{define "subject"}}Welcome to Greenlight!{{end}}
+{{define "subject"}}Welcome to SportGether!{{end}}
 
 {{define "plainBody"}} 
 Hi {{.userId}},
@@ -7,6 +7,7 @@ Thanks for joining as one of the member of SportGether. We're excited to have yo
 Please validate your account by pasting the below code in the prompt window from the application.
 
 Your activation code: {{.activationCode}}
+Your username: {{.userId}}
 
 
 
@@ -26,11 +27,20 @@ CharmFlex Studio
 
 <body> 
     <p>Hi {{.userId}}</p>
+
+    <br></br>
+
     <p>Thanks for joining as one of the member of SportGether. We're excited to have you onboard!</p>
     <p>Please validate your account by pasting the below code in the prompt window from the application.</p>
-    <p>P Your activation code: {{.activationCode}}</p>
 
-    Your activation code: {{.activationCode}}
+    <br></br>
+
+    <p>Your activation code: {{.activationCode}}</p>
+    <p>Your username: {{.userId}}</p>
+
+    <br></br>
+    <br></br>
+    <br></br>
 
     <p>Thanks,</p>
     <p>CharmFlex Studio</p>

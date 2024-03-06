@@ -65,6 +65,48 @@ func (app *Application) getUserEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (app *Application) updateEvent(w http.ResponseWriter, r *http.Request) {
+	input := struct {
+		StartTime   string `json:"startTime"`
+		EndTime     string `json:"endTime"`
+		Description string `json:"description"`
+	}{}
+
+	err := app.readRequest(r, &input)
+	if err != nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	eventId, err := app.readParam("eventId", r)
+	if err != nil || eventId == nil {
+		app.logError(err, r)
+		app.writeBadRequestResponse(w, r)
+		return
+	}
+
+	host, ok := app.GetUserContext(r)
+	if !ok {
+		app.logError(errors.New("cannot get user object from request context"), r)
+		app.writeInternalServerErrorResponse(w, r)
+		return
+	}
+	event := &models.Event{
+		ID:          *eventId,
+		HostId:      host.ID,
+		StartTime:   input.StartTime,
+		EndTime:     input.EndTime,
+		Description: input.Description,
+	}
+
+	err = app.daos.UpdateEvent(event)
+	if err != nil {
+		app.logError(err, r)
+		app.writeInternalServerErrorResponse(w, r)
+	}
+}
+
 func (app *Application) createEvent(w http.ResponseWriter, r *http.Request) {
 	input := struct {
 		EventName           string         `json:"eventName"`
