@@ -481,8 +481,10 @@ func (eventDao EventDao) GetEventById(eventId int64, userId int64) (*EventDetail
 			return nil, err
 		}
 		eventDetail.Participants = append(eventDetail.Participants, participant)
+		if participant.ParticipantId == userId {
+			eventDetail.IsJoined = true
+		}
 	}
-	eventDetail.IsJoined = true
 
 	return &eventDetail, nil
 }
