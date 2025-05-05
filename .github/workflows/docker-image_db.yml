@@ -1,10 +1,7 @@
 name: DB Docker Image CI
 
 on:
-  push:
-    branches: [ "main" ]
-    paths: 
-      - 'database/*'
+  workflow_dispatch:
 
 jobs:
 
