@@ -1,3 +1,4 @@
 deploy/server
 data/service-account-file.json
 data/*
+.env
